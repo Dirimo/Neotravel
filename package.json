@@ -2,9 +2,14 @@
   "name": "neotravel",
   "version": "1.0.0",
   "description": "Système automatisé de génération de devis pour transferts en autocar.",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "setup:airtable": "tsx script/setup-airtable.ts"
   },
   "repository": {
     "type": "git",
@@ -13,8 +18,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Dirimo/Neotravel/issues"
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   },
-  "homepage": "https://github.com/Dirimo/Neotravel#readme"
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "tsx": "^4.16.0"
+  }
 }
