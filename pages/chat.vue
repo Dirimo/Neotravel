@@ -156,43 +156,8 @@ const suggestions = [
   'Sortie scolaire Bordeaux → Biarritz'
 ]
 
-// Simulated conversation state
-const conversationStep = ref(0)
+const sessionId = ref('session-' + Date.now())
 const pendingDevis = ref<DevisData | null>(null)
-
-const botResponses = [
-  // Step 0 — ask for date
-  (userMsg: string) => ({
-    content: `Parfait ! J'ai bien noté votre demande : **${userMsg}**.\n\nPour calculer votre devis, j'ai besoin de quelques informations supplémentaires.\n\n📅 Quelle est la **date de départ** souhaitée ?`,
-    devis: null
-  }),
-  // Step 1 — ask for options
-  (_: string) => ({
-    content: `Merci ! Avez-vous besoin d'options particulières ?\n\n• 🎤 Guide à bord (+80€/jour)\n• 🌙 Nuit chauffeur sur place (+120€/nuit)\n• Aucune option\n\nRépondez par exemple : *"Guide et nuit chauffeur"* ou *"Aucune option"*.`,
-    devis: null
-  }),
-  // Step 2 — generate devis
-  (_: string) => {
-    const devis: DevisData = {
-      reference: 'NEO-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      trajet: messages.value[0]?.content || 'Paris → Lyon',
-      dateDepart: '15 juillet 2025',
-      passagers: 48,
-      typeVehicule: 'Autocar 53 places',
-      prixHT: 1840,
-      tva: 184,
-      prixTTC: 2024,
-      duree: '4h30',
-      options: ['Guide à bord'],
-      validiteDevis: '72 heures'
-    }
-    pendingDevis.value = devis
-    return {
-      content: `Excellent ! J'ai calculé votre devis. Voici le récapitulatif ci-dessous 👇`,
-      devis
-    }
-  }
-]
 
 async function sendMessage(text: string) {
   const userMsg = text.trim()
@@ -206,19 +171,28 @@ async function sendMessage(text: string) {
   scrollToBottom()
 
   isTyping.value = true
-  await delay(1200 + Math.random() * 600)
 
-  const stepIdx = Math.min(conversationStep.value, botResponses.length - 1)
-  const response = botResponses[stepIdx](userMsg)
+  try {
+    const data = await $fetch<{ reply: string }>('/api/chat', {
+      method: 'POST',
+      body: { message: userMsg, sessionId: sessionId.value }
+    })
 
-  messages.value.push({
-    role: 'assistant',
-    content: response.content,
-    timestamp: new Date(),
-    devis: response.devis
-  })
+    messages.value.push({
+      role: 'assistant',
+      content: data.reply,
+      timestamp: new Date(),
+      devis: null
+    })
+  } catch {
+    messages.value.push({
+      role: 'assistant',
+      content: "Je suis temporairement indisponible. Vérifiez que n8n est bien lancé (`n8n start`) et que le workflow est en mode test.",
+      timestamp: new Date(),
+      devis: null
+    })
+  }
 
-  conversationStep.value++
   isTyping.value = false
 
   await nextTick()
@@ -233,9 +207,6 @@ function scrollToBottom() {
   bottomAnchor.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
 
 function autoResize(e: Event) {
   const target = e.target as HTMLTextAreaElement
