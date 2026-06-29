@@ -1,21 +1,32 @@
 {
   "name": "neotravel",
   "private": true,
-  "type": "module",
+  "description": "Système automatisé de génération de devis pour transferts en autocar.",
   "scripts": {
-    "build": "nuxt build",
     "dev": "nuxt dev",
+    "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "server:dev": "tsx src/server.ts",
+    "server:build": "tsc",
+    "server:start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "setup:airtable": "tsx script/setup-airtable.ts"
   },
   "dependencies": {
     "nuxt": "^3.12.0",
     "vue": "^3.4.0",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "dotenv": "^16.4.0",
+    "tsx": "^4.16.0"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.12.0",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   }
 }
