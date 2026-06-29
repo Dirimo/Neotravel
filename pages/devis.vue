@@ -16,16 +16,19 @@
       </div>
 
       <!-- Main devis document -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div id="devis-document" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
         <!-- Document header -->
-        <div class="px-8 py-7 border-b border-gray-100">
+        <div class="px-8 py-5 border-b border-gray-100">
           <div class="flex items-start justify-between">
             <div>
               <div class="flex items-center gap-2 mb-4">
                 <div class="w-8 h-8 rounded-lg bg-diamond-500 flex items-center justify-center">
-                  <svg class="w-4 h-4 text-white" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 13 L8 3 L14 13 Z" fill="currentColor" opacity="0.9"/>
+                  <svg class="w-5 h-5" viewBox="0 0 20 20" fill="none">
+                    <path d="M0 17 C3 13 7 8 13 4 L20 7 C13 11 8 16 5 20 Z" fill="white" opacity="0.2"/>
+                    <path d="M0 17 C3 13 7 8 13 4" stroke="white" stroke-width="1.2" fill="none" opacity="0.85"/>
+                    <path d="M5 20 C8 16 13 11 20 7" stroke="white" stroke-width="1.2" fill="none" opacity="0.85"/>
+                    <path d="M2.5 18.5 C5.5 14.5 9.5 9.5 16.5 5.5" stroke="white" stroke-width="0.85" stroke-dasharray="2.5 2" fill="none" opacity="1"/>
                   </svg>
                 </div>
                 <span class="font-bold text-gray-900 text-lg">Neotravel</span>
@@ -33,11 +36,11 @@
               <h1 class="text-2xl font-bold text-gray-900">Devis de transport de groupe</h1>
               <p class="text-gray-400 text-sm mt-1">Émis le {{ today }}</p>
             </div>
-            <div class="text-right">
+            <div class="flex flex-col items-center text-center">
               <span class="text-xs text-gray-400 uppercase tracking-wider">Référence</span>
               <p class="font-mono font-semibold text-gray-900 text-lg">{{ devisRef }}</p>
-              <span class="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-1 mt-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background-color:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:9999px;padding:4px 14px;margin-top:8px;">
+                <span style="width:7px;height:7px;border-radius:50%;background-color:#22c55e;display:inline-block;flex-shrink:0;"></span>
                 Accepté
               </span>
             </div>
@@ -45,7 +48,7 @@
         </div>
 
         <!-- Trip details -->
-        <div class="px-8 py-6 border-b border-gray-100">
+        <div class="px-8 py-4 border-b border-gray-100">
           <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Détails du trajet</h3>
           <div class="grid sm:grid-cols-2 gap-4">
             <div v-for="detail in tripDetails" :key="detail.label" class="flex items-start gap-3">
@@ -59,7 +62,7 @@
         </div>
 
         <!-- Services -->
-        <div class="px-8 py-6 border-b border-gray-100">
+        <div class="px-8 py-4 border-b border-gray-100">
           <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Services inclus</h3>
           <div class="space-y-2">
             <div v-for="service in services" :key="service" class="flex items-center gap-2 text-sm text-gray-700">
@@ -72,7 +75,7 @@
         </div>
 
         <!-- Price table -->
-        <div class="px-8 py-6 border-b border-gray-100">
+        <div class="px-8 py-4 border-b border-gray-100">
           <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Récapitulatif tarifaire</h3>
           <table class="w-full text-sm">
             <tbody>
@@ -91,7 +94,7 @@
         </div>
 
         <!-- Contact info -->
-        <div class="px-8 py-6 bg-gray-50">
+        <div class="px-8 py-4 bg-gray-50">
           <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Votre contact Neotravel</h3>
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-diamond-100 flex items-center justify-center">
@@ -111,13 +114,18 @@
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row gap-3 mt-6">
         <button
-          @click="printDevis"
-          class="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          @click="downloadPDF"
+          :disabled="downloading"
+          class="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          <svg v-if="!downloading" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/>
           </svg>
-          Imprimer / PDF
+          <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          {{ downloading ? 'Génération…' : 'Télécharger PDF' }}
         </button>
         <NuxtLink
           to="/chat"
@@ -192,13 +200,21 @@ const priceLines = [
   { label: 'TVA (10%)', amount: '+184 €' }
 ]
 
-function printDevis() {
-  window.print()
+const downloading = ref(false)
+
+async function downloadPDF() {
+  downloading.value = true
+  const html2pdf = (await import('html2pdf.js')).default
+  const element = document.getElementById('devis-document')
+  await html2pdf().set({
+    margin: [8, 10, 8, 10],
+    filename: `devis-${devisRef.value}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 1.6, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'avoid-all' }
+  }).from(element).save()
+  downloading.value = false
 }
 </script>
 
-<style scoped>
-@media print {
-  button, a { display: none !important; }
-}
-</style>
