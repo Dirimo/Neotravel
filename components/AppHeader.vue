@@ -17,7 +17,7 @@
 
       <!-- Navigation -->
       <nav class="flex items-center gap-3">
-        <a href="#" class="btn-outline">Connexion</a>
+        <NuxtLink to="/login" class="btn-outline">Connexion</NuxtLink>
         <NuxtLink to="/chat" class="btn-primary">
           Obtenir un devis
         </NuxtLink>
