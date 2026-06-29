@@ -17,7 +17,6 @@
 
       <!-- Navigation -->
       <nav class="flex items-center gap-3">
-        <a href="#" class="btn-ghost hidden sm:inline-flex">Devenir partenaire</a>
         <a href="#" class="btn-outline">Connexion</a>
         <NuxtLink to="/chat" class="btn-primary">
           Obtenir un devis

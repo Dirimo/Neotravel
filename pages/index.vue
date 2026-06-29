@@ -18,11 +18,6 @@
         <!-- Left: Text -->
         <div class="animate-fade-in">
 
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-diamond-50 border border-diamond-200 text-diamond-700 text-xs font-medium mb-6">
-            <span class="w-1.5 h-1.5 rounded-full bg-diamond-500 animate-pulse-slow"></span>
-            Assistant intelligent disponible 24h/24
-          </div>
-
           <h1 class="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold text-gray-900 leading-tight tracking-tight mb-6">
             Transport de groupe&nbsp;:<br>
             <span class="text-diamond-500">Obtenez un devis</span><br>
@@ -129,18 +124,6 @@
               </div>
             </div>
 
-            <!-- Badge devis validé uniquement -->
-            <div class="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-2.5 flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-diamond-50 flex items-center justify-center">
-                <svg class="w-4 h-4 text-diamond-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-              </div>
-              <div>
-                <p class="text-xs font-semibold text-gray-900">Devis validé</p>
-                <p class="text-xs text-gray-400">À l'instant</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -159,59 +142,6 @@
           <h3 class="font-semibold text-gray-900 mb-2">{{ adv.title }}</h3>
           <p class="text-sm text-gray-500 leading-relaxed">{{ adv.description }}</p>
         </div>
-      </div>
-    </section>
-
-    <!-- Le Concept — section démo IA -->
-    <section ref="conceptSection" class="bg-gray-50 border-y border-gray-100 py-24">
-      <div class="max-w-3xl mx-auto px-6">
-        <div class="text-center mb-10">
-          <span class="inline-block text-xs font-semibold text-diamond-600 uppercase tracking-widest mb-3">Notre technologie</span>
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Le concept en un coup d'œil</h2>
-          <p class="text-gray-500">Tapez votre besoin en langage naturel. Notre IA extrait automatiquement chaque donnée clé.</p>
-        </div>
-
-        <!-- Example phrase -->
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-7 py-5 mb-8 flex items-start gap-4">
-          <div class="w-8 h-8 rounded-full bg-diamond-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg class="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <p class="text-gray-700 text-base leading-relaxed italic">
-            "Nous sommes un groupe de 45 lycéens au départ de Paris pour aller à Lyon le 14 mai."
-          </p>
-        </div>
-
-        <!-- Arrow -->
-        <div class="flex justify-center mb-8">
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-px h-6 bg-diamond-300"></div>
-            <svg class="w-5 h-5 text-diamond-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-            <span class="text-xs text-diamond-500 font-medium">Extraction automatique</span>
-          </div>
-        </div>
-
-        <!-- Animated badges -->
-        <div class="flex flex-wrap justify-center gap-3">
-          <TransitionGroup name="badge">
-            <div
-              v-for="(badge, i) in visibleBadges"
-              :key="badge.label"
-              class="flex items-center gap-2 bg-green-100 text-green-800 border border-green-200 rounded-full px-4 py-2 text-sm font-medium shadow-sm"
-            >
-              <svg class="w-4 h-4 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-              </svg>
-              <span class="text-green-600 font-semibold">{{ badge.label }} :</span>
-              <span>{{ badge.value }}</span>
-            </div>
-          </TransitionGroup>
-        </div>
-
-        <p class="text-center text-xs text-gray-400 mt-8">Aucune saisie de formulaire. Juste une phrase.</p>
       </div>
     </section>
 
@@ -273,41 +203,6 @@
 </template>
 
 <script setup lang="ts">
-const conceptSection = ref<HTMLElement | null>(null)
-const visibleBadges = ref<{ label: string; value: string }[]>([])
-
-const allBadges = [
-  { label: 'Type', value: 'Scolaire' },
-  { label: 'Passagers', value: '45' },
-  { label: 'Départ', value: 'Paris' },
-  { label: 'Destination', value: 'Lyon' }
-]
-
-function animateBadges() {
-  visibleBadges.value = []
-  allBadges.forEach((badge, i) => {
-    setTimeout(() => {
-      visibleBadges.value.push(badge)
-    }, i * 500)
-  })
-}
-
-onMounted(() => {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          animateBadges()
-        } else {
-          visibleBadges.value = []
-        }
-      })
-    },
-    { threshold: 0.4 }
-  )
-  if (conceptSection.value) observer.observe(conceptSection.value)
-})
-
 const advantages = [
   {
     title: 'Captation fluide, centralisation automatique',
@@ -349,12 +244,3 @@ const steps = [
 ]
 </script>
 
-<style scoped>
-.badge-enter-active {
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.badge-enter-from {
-  opacity: 0;
-  transform: scale(0.7) translateY(8px);
-}
-</style>
