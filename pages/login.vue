@@ -12,14 +12,14 @@
             <path d="M2.5 18.5 C5.5 14.5 9.5 9.5 16.5 5.5" stroke="white" stroke-width="0.85" stroke-dasharray="2.5 2" fill="none" opacity="1"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-gray-900">Connexion</h1>
-        <p class="text-sm text-gray-400 mt-1">Accédez à votre espace Neotravel</p>
+        <h1 class="text-xl font-bold text-gray-900">{{ t('login.title') }}</h1>
+        <p class="text-sm text-gray-400 mt-1">{{ t('login.sub') }}</p>
       </div>
 
       <!-- Formulaire -->
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Adresse e-mail</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('login.email') }}</label>
           <input
             v-model="email"
             type="email"
@@ -31,7 +31,7 @@
 
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block text-sm font-medium text-gray-700">Mot de passe</label>
+            <label class="block text-sm font-medium text-gray-700">{{ t('login.pwd') }}</label>
             <a href="#" class="text-xs text-diamond-600 hover:text-diamond-700 transition-colors">Mot de passe oublié ?</a>
           </div>
           <input
@@ -53,7 +53,7 @@
           :disabled="loading"
           class="w-full btn-primary py-3 text-sm mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="!loading">Se connecter</span>
+          <span v-if="!loading">{{ t('login.btn') }}</span>
           <span v-else class="flex items-center justify-center gap-2">
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -73,9 +73,9 @@
 
       <!-- Créer un compte -->
       <p class="text-center text-sm text-gray-500">
-        Nouvel utilisateur ?
+        {{ t('login.no_account') }}
         <NuxtLink to="/register" class="text-diamond-600 font-medium hover:text-diamond-700 transition-colors">
-          Créer un compte
+          {{ t('login.register') }}
         </NuxtLink>
       </p>
     </div>
@@ -84,6 +84,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
+const { t } = useLang()
 
 const email = ref('')
 const password = ref('')
@@ -107,8 +108,8 @@ async function handleLogin() {
       error.value = data.error ?? 'Erreur de connexion'
       return
     }
-    login(data.token, data.email)
-    router.push('/dashboard')
+    login(data.token, data.email, data.role)
+    router.push(data.role === 'admin' ? '/pilotage' : '/dashboard')
   } catch {
     error.value = 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.'
   } finally {

@@ -246,3 +246,8 @@ export async function lireDevisUtilisateur(email: string): Promise<AirtableRecor
     filterByFormula: `{Utilisateurs} = "${email}"`,
   });
 }
+
+/** Lit tous les devis, toutes utilisatrices et utilisateurs confondus (vue direction). */
+export async function lireTousLesDevis(): Promise<AirtableRecord[]> {
+  return toutLire("Devis");
+}

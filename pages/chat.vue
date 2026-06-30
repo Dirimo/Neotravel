@@ -11,12 +11,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
             </svg>
           </div>
-          <h2 class="text-2xl font-semibold text-gray-900 mb-3">
-            Bonjour&nbsp;! Je suis Neotravel,<br class="hidden sm:block"> votre assistant personnel.
-          </h2>
-          <p class="text-gray-500 mb-8 max-w-md">
-            Décrivez-moi votre trajet et je calculerai votre devis en quelques instants.
-          </p>
+          <h2 class="text-2xl font-semibold text-gray-900 mb-3" style="white-space:pre-line">{{ t('chat.welcome.title') }}</h2>
+          <p class="text-gray-500 mb-8 max-w-md">{{ t('chat.welcome.sub') }}</p>
           <div class="flex flex-col sm:flex-row gap-2 w-full max-w-md">
             <button
               v-for="s in suggestions" :key="s"
@@ -115,7 +111,7 @@
             </svg>
           </button>
         </form>
-        <p class="text-xs text-gray-300 mt-2 text-center">Entrée pour envoyer · Maj+Entrée pour un saut de ligne</p>
+        <p class="text-xs text-gray-300 mt-2 text-center">{{ t('chat.hint') }}</p>
       </div>
     </div>
   </div>
@@ -173,13 +169,10 @@ const suggestions = [
   'Lyon → Marseille'
 ]
 
-const inputPlaceholders: Record<number, string> = {
-  0: 'Ex : Paris → Lyon…',
-  1: 'Ex : 45 personnes…',
-  2: 'Aller simple ou aller-retour…',
-  3: 'Ex : 14 mai 2025…',
-}
-const inputPlaceholder = computed(() => inputPlaceholders[step.value] ?? 'Écrivez votre réponse…')
+const inputPlaceholder = computed(() => {
+  const key = `chat.ph.${step.value}`
+  return t(key) !== key ? t(key) : (lang.value === 'en' ? 'Type your answer…' : 'Écrivez votre réponse…')
+})
 
 // ─── Distance helper ──────────────────────────────────
 function estimerDistanceKm(trajet: string): number {
@@ -256,6 +249,7 @@ function parseFrenchDate(dateStr: string): string {
 }
 
 const { token } = useAuth()
+const { t, lang } = useLang()
 
 async function calculerDevis(): Promise<DevisData> {
   const { trajet, distanceKm, passagers, typeTransfert, date } = collected.value
@@ -300,40 +294,33 @@ async function repondreBotStep(userMsg: string): Promise<Message> {
   const now = new Date()
 
   if (step.value === 0) {
-    // Trajet
     collected.value.trajet = userMsg
     collected.value.distanceKm = estimerDistanceKm(userMsg)
     step.value = 1
-    return {
-      role: 'assistant',
-      content: `Parfait ! J'ai noté votre trajet **${userMsg}**, soit environ **${collected.value.distanceKm} km**.\n\nCombien de passagers seront dans votre groupe ?`,
-      timestamp: now
-    }
+    const km = collected.value.distanceKm
+    const content = lang.value === 'en'
+      ? `Got it! Journey **${userMsg}** — approximately **${km} km**.\n\nHow many passengers will be in your group?`
+      : `Parfait ! J'ai noté votre trajet **${userMsg}**, soit environ **${km} km**.\n\nCombien de passagers seront dans votre groupe ?`
+    return { role: 'assistant', content, timestamp: now }
   }
 
   if (step.value === 1) {
-    // Passagers
     const n = parseInt(userMsg.replace(/\D/g, ''), 10)
     collected.value.passagers = isNaN(n) ? 30 : n
     step.value = 2
-    return {
-      role: 'assistant',
-      content: `**${collected.value.passagers} passagers** — je prévois un **${vehiculePourPassagers(collected.value.passagers)}**.\n\nS'agit-il d'un aller simple ou d'un aller-retour ?`,
-      timestamp: now,
-      quickReplies: ['Aller simple', 'Aller-retour']
-    }
+    const vehicule = vehiculePourPassagers(collected.value.passagers)
+    const content = lang.value === 'en'
+      ? `**${collected.value.passagers} passengers** — I'll arrange a **${vehicule}**.\n\nIs this a one-way or round trip?`
+      : `**${collected.value.passagers} passagers** — je prévois un **${vehicule}**.\n\nS'agit-il d'un aller simple ou d'un aller-retour ?`
+    return { role: 'assistant', content, timestamp: now, quickReplies: [t('chat.qr.simple'), t('chat.qr.ar')] }
   }
 
   if (step.value === 2) {
-    // Type de transfert
-    const isAR = userMsg.toLowerCase().includes('retour') || userMsg.toLowerCase().includes('ar')
+    const isAR = userMsg.toLowerCase().includes('retour') || userMsg.toLowerCase().includes('round') || userMsg.toLowerCase().includes('ar')
     collected.value.typeTransfert = isAR ? 'aller_retour' : 'aller_simple'
     step.value = 3
-    return {
-      role: 'assistant',
-      content: `${isAR ? 'Aller-retour noté ✓' : 'Aller simple noté ✓'}\n\nQuelle est la **date de départ** souhaitée ? (ex : 14 mai 2025)`,
-      timestamp: now
-    }
+    const content = isAR ? t('chat.step2.ar') : t('chat.step2.as')
+    return { role: 'assistant', content, timestamp: now }
   }
 
   if (step.value === 3) {
@@ -341,20 +328,15 @@ async function repondreBotStep(userMsg: string): Promise<Message> {
     step.value = 4
     try {
       const devis = await calculerDevis()
-      return { role: 'assistant', content: `Voici votre devis personnalisé 👇`, timestamp: now, devis }
+      return { role: 'assistant', content: t('chat.devis.ready'), timestamp: now, devis }
     } catch (err: unknown) {
       step.value = 0
       collected.value = { trajet: '', distanceKm: 0, passagers: 0, typeTransfert: null, date: '' }
-      return { role: 'assistant', content: err instanceof Error ? err.message : 'Une erreur est survenue.', timestamp: now }
+      return { role: 'assistant', content: err instanceof Error ? err.message : (lang.value === 'en' ? 'An error occurred.' : 'Une erreur est survenue.'), timestamp: now }
     }
   }
 
-  // Après le devis
-  return {
-    role: 'assistant',
-    content: 'Souhaitez-vous modifier un critère ou faire une nouvelle demande ?',
-    timestamp: now
-  }
+  return { role: 'assistant', content: t('chat.after'), timestamp: now }
 }
 
 // ─── Actions ──────────────────────────────────────────
@@ -417,11 +399,7 @@ function acceptDevis(devis: DevisData | null | undefined) {
 function refuseDevis() {
   step.value = 0
   collected.value = { trajet: '', distanceKm: 0, passagers: 0, typeTransfert: null, date: '' }
-  messages.value.push({
-    role: 'assistant',
-    content: 'Pas de problème ! Dites-moi votre nouveau trajet et je recalcule.',
-    timestamp: new Date()
-  })
+  messages.value.push({ role: 'assistant', content: t('chat.refuse'), timestamp: new Date() })
   nextTick(() => scrollToBottom())
 }
 </script>

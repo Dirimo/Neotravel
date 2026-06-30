@@ -5,14 +5,14 @@
       <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Mon espace</h1>
+          <h1 class="text-2xl font-bold text-gray-900">{{ t('dashboard.title') }}</h1>
           <p class="text-sm text-gray-400 mt-1">{{ userEmail }}</p>
         </div>
         <button @click="handleLogout" class="text-sm text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
           </svg>
-          Déconnexion
+          {{ t('dashboard.logout') }}
         </button>
       </div>
 
@@ -25,8 +25,8 @@
             </svg>
           </div>
           <div>
-            <p class="font-semibold text-sm">Nouvelle demande</p>
-            <p class="text-diamond-100 text-xs mt-0.5">Obtenir un devis en 2 minutes</p>
+            <p class="font-semibold text-sm">{{ t('dashboard.new') }}</p>
+            <p class="text-diamond-100 text-xs mt-0.5">{{ t('dashboard.new.sub') }}</p>
           </div>
         </NuxtLink>
         <div class="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl px-6 py-5 shadow-sm">
@@ -36,8 +36,8 @@
             </svg>
           </div>
           <div>
-            <p class="font-semibold text-sm text-gray-900">{{ tousLesDevis.length }} devis</p>
-            <p class="text-gray-400 text-xs mt-0.5">dans votre historique</p>
+            <p class="font-semibold text-sm text-gray-900">{{ tousLesDevis.length }} {{ t('dashboard.devis') }}</p>
+            <p class="text-gray-400 text-xs mt-0.5">{{ t('dashboard.in_history') }}</p>
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@
       <!-- Liste des devis -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-50">
-          <h2 class="font-semibold text-gray-900 text-sm">Historique des devis</h2>
+          <h2 class="font-semibold text-gray-900 text-sm">{{ t('dashboard.history') }}</h2>
         </div>
 
         <!-- Chargement -->
@@ -69,9 +69,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
-          <p class="text-sm text-gray-400">Aucun devis pour l'instant</p>
+          <p class="text-sm text-gray-400">{{ t('dashboard.empty') }}</p>
           <NuxtLink to="/chat" class="text-diamond-600 text-sm font-medium hover:text-diamond-700 mt-1 inline-block">
-            Faire une demande →
+            {{ t('dashboard.empty.cta') }}
           </NuxtLink>
         </div>
 
@@ -102,7 +102,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/>
                 </svg>
-                PDF
+                {{ t('dashboard.pdf') }}
               </button>
             </div>
           </div>
@@ -118,6 +118,7 @@ import { ref, onMounted } from 'vue'
 definePageMeta({ layout: 'default', ssr: false })
 
 const { userEmail, token, isLoggedIn, logout, init } = useAuth()
+const { t } = useLang()
 const router = useRouter()
 
 const devis = ref<any[]>([])

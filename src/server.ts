@@ -1,11 +1,20 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { calculer_devis, type ParametresDevis, type TypeTransfert } from "./calculer_devis";
-import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, creerDevis } from "./airtable-client";
+import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, lireTousLesDevis, creerDevis } from "./airtable-client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
 const JWT_SECRET = process.env["JWT_SECRET"] ?? "neotravel_dev_secret";
+
+const ADMIN_EMAILS = (process.env["ADMIN_EMAILS"] ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+function role(email: string): "admin" | "user" {
+  return ADMIN_EMAILS.includes(email.toLowerCase()) ? "admin" : "user";
+}
 
 const PORT = process.env["BACKEND_PORT"] != null ? parseInt(process.env["BACKEND_PORT"]) : 3001;
 
@@ -202,8 +211,9 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
       repondre(res, 401, { error: "Email ou mot de passe incorrect" });
       return;
     }
-    const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "7d" });
-    repondre(res, 200, { token, email });
+    const r = role(email);
+    const token = jwt.sign({ email, role: r }, JWT_SECRET, { expiresIn: "7d" });
+    repondre(res, 200, { token, email, role: r });
     return;
   }
 
@@ -232,6 +242,35 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     return;
   }
 
+  // GET /devis/all — vue direction : tous les devis, réservé aux comptes admin (JWT requis)
+  if (req.method === "GET" && req.url === "/devis/all") {
+    const authHeader = req.headers["authorization"] ?? "";
+    const token = authHeader.replace("Bearer ", "");
+    if (!token) {
+      repondre(res, 401, { error: "Token manquant" });
+      return;
+    }
+    let payload: { email: string; role?: string };
+    try {
+      payload = jwt.verify(token, JWT_SECRET) as { email: string; role?: string };
+    } catch {
+      repondre(res, 401, { error: "Token invalide ou expiré" });
+      return;
+    }
+    if (payload.role !== "admin") {
+      repondre(res, 403, { error: "Accès réservé aux comptes administrateur" });
+      return;
+    }
+    try {
+      const devis = await lireTousLesDevis();
+      repondre(res, 200, { devis });
+    } catch (err) {
+      console.error("Erreur lireTousLesDevis:", err);
+      repondre(res, 500, { error: "Erreur lors de la récupération des devis" });
+    }
+    return;
+  }
+
   // GET /debug/champs — affiche les vrais noms de champs Airtable
   if (req.method === "GET" && req.url === "/debug/champs") {
     try {
@@ -248,7 +287,7 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     return;
   }
 
-  repondre(res, 404, { error: "Route inconnue. Disponible : POST /devis, POST /devis-test, GET /health, POST /auth/register, POST /auth/login, GET /devis/history" });
+  repondre(res, 404, { error: "Route inconnue. Disponible : POST /devis, POST /devis-test, GET /health, POST /auth/register, POST /auth/login, GET /devis/history, GET /devis/all" });
 });
 
 serveur.listen(PORT, () => {

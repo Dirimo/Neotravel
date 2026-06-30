@@ -17,7 +17,7 @@ export default {
           200: '#b4e5ca',
           300: '#7fd1aa',
           400: '#48b585',
-          500: '#2a9d6e',  // vert diamant principal
+          500: '#2a9d6e',
           600: '#1e7d57',
           700: '#196445',
           800: '#164f38',

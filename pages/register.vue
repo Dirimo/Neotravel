@@ -12,15 +12,15 @@
             <path d="M2.5 18.5 C5.5 14.5 9.5 9.5 16.5 5.5" stroke="white" stroke-width="0.85" stroke-dasharray="2.5 2" fill="none" opacity="1"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-gray-900">Créer un compte</h1>
-        <p class="text-sm text-gray-400 mt-1">Rejoignez Neotravel gratuitement</p>
+        <h1 class="text-xl font-bold text-gray-900">{{ t('register.title') }}</h1>
+        <p class="text-sm text-gray-400 mt-1">{{ t('register.sub') }}</p>
       </div>
 
       <!-- Formulaire -->
       <form @submit.prevent="handleRegister" class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">Prénom</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('register.first') }}</label>
             <input
               v-model="prenom"
               type="text"
@@ -30,7 +30,7 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">Nom</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('register.last') }}</label>
             <input
               v-model="nom"
               type="text"
@@ -42,7 +42,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Adresse e-mail</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('register.email') }}</label>
           <input
             v-model="email"
             type="email"
@@ -53,7 +53,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ t('register.pwd') }}</label>
           <input
             v-model="password"
             type="password"
@@ -80,7 +80,7 @@
           :disabled="loading"
           class="w-full btn-primary py-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="!loading">Créer mon compte</span>
+          <span v-if="!loading">{{ t('register.btn') }}</span>
           <span v-else class="flex items-center justify-center gap-2">
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -92,9 +92,9 @@
       </form>
 
       <p class="text-center text-sm text-gray-500 mt-6">
-        Déjà un compte ?
+        {{ t('register.has_account') }}
         <NuxtLink to="/login" class="text-diamond-600 font-medium hover:text-diamond-700 transition-colors">
-          Se connecter
+          {{ t('register.login') }}
         </NuxtLink>
       </p>
     </div>
@@ -103,6 +103,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
+const { t } = useLang()
 
 const prenom = ref('')
 const nom = ref('')
