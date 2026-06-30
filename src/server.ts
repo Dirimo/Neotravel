@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { calculer_devis, type ParametresDevis, type TypeTransfert } from "./calculer_devis";
 
@@ -105,7 +106,52 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     return;
   }
 
-  repondre(res, 404, { error: "Route inconnue. Disponible : POST /devis, POST /devis-test, GET /health" });
+  // Endpoint distance : POST /distance
+  if (req.method === "POST" && req.url === "/distance") {
+    let corps: string;
+    try { corps = await lireCorps(req); } catch {
+      repondre(res, 400, { error: "Impossible de lire le corps." }); return;
+    }
+
+    let body: Record<string, unknown>;
+    try { body = JSON.parse(corps) as Record<string, unknown>; } catch {
+      repondre(res, 400, { error: "JSON invalide." }); return;
+    }
+
+    const villeDepart = String(body["villeDepart"] ?? "");
+    const villeArrivee = String(body["villeArrivee"] ?? "");
+    const ORS_KEY = process.env["ORS_API_KEY"] ?? "";
+
+    if (!villeDepart || !villeArrivee) {
+      repondre(res, 400, { error: "villeDepart et villeArrivee sont requis." }); return;
+    }
+    if (!ORS_KEY) {
+      repondre(res, 500, { error: "ORS_API_KEY manquant dans .env" }); return;
+    }
+
+    try {
+      const geocode = async (ville: string) => {
+        const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(ville)}&size=1&layers=locality,localadmin,county`;
+        const r = await fetch(url);
+        const d = await r.json() as { features: Array<{ geometry: { coordinates: [number, number] } }> };
+        if (!d.features?.length) throw new Error(`Ville introuvable : ${ville}`);
+        return d.features[0]!.geometry.coordinates; // [lng, lat]
+      };
+
+      const [coordD, coordA] = await Promise.all([geocode(villeDepart), geocode(villeArrivee)]);
+      const dirUrl = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${ORS_KEY}&start=${coordD[0]},${coordD[1]}&end=${coordA[0]},${coordA[1]}`;
+      const dirRes = await fetch(dirUrl);
+      const dir = await dirRes.json() as { features: Array<{ properties: { segments: Array<{ distance: number }> } }> };
+      const distanceKm = Math.round(dir.features[0]!.properties.segments[0]!.distance / 1000);
+
+      repondre(res, 200, { distanceKm, villeDepart, villeArrivee });
+    } catch (err) {
+      repondre(res, 500, { error: err instanceof Error ? err.message : "Erreur OpenRouteService" });
+    }
+    return;
+  }
+
+  repondre(res, 404, { error: "Route inconnue. Disponible : POST /devis, POST /devis-test, POST /distance, GET /health" });
 });
 
 serveur.listen(PORT, () => {
