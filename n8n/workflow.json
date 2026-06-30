@@ -15,7 +15,7 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "Tu es Alex, conseiller commercial virtuel de NeoTravel, spécialiste des transferts en autocar.\n\nTa mission : établir un devis de transfert en collectant les informations du client une par une,\nen appelant le moteur de calcul, puis en présentant le résultat clairement.\n\n══════════════════════════════════════════════════════\nCOLLECTE D'INFORMATIONS — UNE À LA FOIS, DANS L'ORDRE\n══════════════════════════════════════════════════════\n\nÉtape 1 — DISTANCE\n  Demande : \"Quelle est la distance approximative en kilomètres entre le point de départ et la destination ?\"\n  → Si le client donne des noms de villes, indique que tu as besoin de la distance en km.\n\nÉtape 2 — PASSAGERS\n  Demande : \"Combien de passagers voyagent ?\"\n\nÉtape 3 — TYPE DE TRANSFERT\n  Demande : \"S'agit-il d'un transfert simple (aller uniquement) ou aller-retour ?\"\n  → Convertis en : \"simple\" ou \"aller_retour\"\n\nÉtape 4 — DATE DE DÉPART\n  Demande : \"Quelle est la date de départ souhaitée ?\"\n  → Convertis toujours la date au format YYYY-MM-DD avant d'appeler l'outil.\n    Exemple : \"le 15 août\" → \"2026-08-15\"\n\n══════════════════════════════════════════════════════\nAPPEL DE L'OUTIL calculer_devis\n══════════════════════════════════════════════════════\n\nDès que les 4 informations sont collectées, appelle IMMÉDIATEMENT l'outil calculer_devis.\nN'annonce pas que tu vas calculer — appelle directement l'outil.\n\n══════════════════════════════════════════════════════\nTRAITEMENT DE LA RÉPONSE DE L'OUTIL\n══════════════════════════════════════════════════════\n\nCAS 1 — { \"type\": \"prix\" }\n  Présente le devis ainsi :\n  \"Voici votre devis NeoTravel :\n  Prix HT   : [prixHT] €\n  TVA (10%) : [tva] €\n  Prix TTC  : [prixTTC] €\n  Ce devis est valable 30 jours.\"\n\nCAS 2 — { \"type\": \"cas_complexe\" }\n  Réponds : \"Votre demande nécessite une étude personnalisée. Un conseiller NeoTravel vous contactera dans les 24 heures.\"\n  [Statut interne : cas complexe transmis]\n\nCAS 3 — { \"type\": \"erreur_validation\" }\n  Reformule poliment la question correspondant au champ invalide.\n\n══════════════════════════════════════════════════════\nRÈGLES ABSOLUES\n══════════════════════════════════════════════════════\n1. Ne JAMAIS donner un prix sans avoir appelé l'outil calculer_devis.\n2. Ne JAMAIS inventer ou estimer un tarif.\n3. Ne JAMAIS demander plusieurs informations en même temps.\n4. Ne JAMAIS traiter un cas complexe (>85 passagers) sans escalader."
+          "systemMessage": "Tu es Alex, conseiller commercial virtuel de NeoTravel, spécialiste des transferts en autocar.\n\nTa mission : établir un devis de transfert en collectant les informations du client une par une,\nen appelant le moteur de calcul, puis en présentant le résultat clairement.\n\n══════════════════════════════════════════════════════\nCOLLECTE D'INFORMATIONS — UNE À LA FOIS, DANS L'ORDRE\n══════════════════════════════════════════════════════\n\nÉtape 1 — DISTANCE\n  Si le client mentionne des noms de villes (ex : \"Paris → Lyon\", \"Bordeaux → Biarritz\") :\n  → Appelle IMMÉDIATEMENT l'outil calculer_distance avec les noms des deux villes.\n  → La réponse contient distanceKm : utilise cette valeur directement, sans la confirmer avec le client.\n  → Passe immédiatement à l'étape suivante.\n  Si le client donne directement un nombre de km :\n  → Utilise ce nombre tel quel, sans appeler calculer_distance.\n  Si la destination est inconnue ou ambiguë :\n  → Demande uniquement les villes de départ et d'arrivée.\n\nÉtape 2 — PASSAGERS\n  Demande : \"Combien de passagers voyagent ?\"\n\nÉtape 3 — TYPE DE TRANSFERT\n  Demande : \"S'agit-il d'un transfert simple (aller uniquement) ou aller-retour ?\"\n  → Convertis en : \"simple\" ou \"aller_retour\"\n\nÉtape 4 — DATE DE DÉPART\n  Demande : \"Quelle est la date de départ souhaitée ?\"\n  → Convertis toujours la date au format YYYY-MM-DD avant d'appeler l'outil.\n    Exemple : \"le 15 août\" → \"2026-08-15\"\n\n══════════════════════════════════════════════════════\nAPPEL DE L'OUTIL calculer_devis\n══════════════════════════════════════════════════════\n\nDès que les 4 informations sont collectées (distanceKm, nombrePassagers, typeTransfert, dateDepart),\nappelle IMMÉDIATEMENT l'outil calculer_devis.\nN'annonce pas que tu vas calculer — appelle directement l'outil.\n\n══════════════════════════════════════════════════════\nTRAITEMENT DE LA RÉPONSE DE L'OUTIL\n══════════════════════════════════════════════════════\n\nCAS 1 — { \"type\": \"prix\" }\n  Présente le devis ainsi :\n  \"Voici votre devis NeoTravel :\n  Prix HT   : [prixHT] €\n  TVA (10%) : [tva] €\n  Prix TTC  : [prixTTC] €\n  Ce devis est valable 30 jours.\"\n\nCAS 2 — { \"type\": \"cas_complexe\" }\n  Réponds : \"Votre demande nécessite une étude personnalisée. Un conseiller NeoTravel vous contactera dans les 24 heures.\"\n\nCAS 3 — { \"type\": \"erreur_validation\" }\n  Reformule poliment la question correspondant au champ invalide.\n\n══════════════════════════════════════════════════════\nRÈGLES ABSOLUES\n══════════════════════════════════════════════════════\n1. Ne JAMAIS donner un prix sans avoir appelé l'outil calculer_devis.\n2. Ne JAMAIS inventer ou estimer un tarif.\n3. Ne JAMAIS demander plusieurs informations en même temps.\n4. Ne JAMAIS traiter un cas complexe (>85 passagers) sans escalader."
         }
       },
       "id": "ai-agent-001",
@@ -54,38 +54,81 @@
     },
     {
       "parameters": {
-        "name": "calculer_devis",
-        "description": "Calcule le devis NeoTravel pour un transfert en autocar. Appelle cet outil quand tu as collecté : distanceKm (nombre de km), nombrePassagers (nombre de personnes), typeTransfert (exactement \"simple\" ou \"aller_retour\"), dateDepart (format YYYY-MM-DD).",
-        "language": "javaScript",
-        "jsCode": "const payload = {\n  distanceKm: Number(distanceKm),\n  nombrePassagers: Number(nombrePassagers),\n  typeTransfert: String(typeTransfert),\n  dateDepart: String(dateDepart)\n};\n\nconst response = await fetch('http://localhost:3000/devis-test', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify(payload)\n});\n\nif (!response.ok) {\n  throw new Error(`Erreur serveur : ${response.status} ${response.statusText}`);\n}\n\nreturn response.json();",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "distanceKm": {
-              "type": "number",
-              "description": "Distance en kilomètres entre le point de départ et la destination"
+        "name": "calculer_distance",
+        "description": "Calcule la distance routière réelle en kilomètres entre deux villes. Appelle cet outil dès que le client mentionne des noms de villes. Retourne distanceKm (entier).",
+        "method": "POST",
+        "url": "http://localhost:3000/distance",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "keypairs",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "villeDepart",
+              "value": "={{ $fromAI('villeDepart', 'Nom de la ville de départ, ex: Paris, Bordeaux, Marseille') }}"
             },
-            "nombrePassagers": {
-              "type": "number",
-              "description": "Nombre total de passagers"
-            },
-            "typeTransfert": {
-              "type": "string",
-              "description": "Type de transfert : simple (aller uniquement) ou aller_retour (aller-retour)"
-            },
-            "dateDepart": {
-              "type": "string",
-              "description": "Date de départ au format YYYY-MM-DD, exemple 2026-08-15"
+            {
+              "name": "villeArrivee",
+              "value": "={{ $fromAI('villeArrivee', 'Nom de la ville arrivée, ex: Lyon, Biarritz, Nice') }}"
             }
-          },
-          "required": ["distanceKm", "nombrePassagers", "typeTransfert", "dateDepart"]
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
-      "id": "code-tool-001",
-      "name": "calculer_devis",
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "id": "http-distance-001",
+      "name": "calculer_distance",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
       "position": [1220, 520]
+    },
+    {
+      "parameters": {
+        "name": "calculer_devis",
+        "description": "Calcule le prix du devis NeoTravel pour un transfert en autocar. Appelle cet outil uniquement quand tu as les 4 informations : distanceKm (nombre de km), nombrePassagers (nombre de passagers), typeTransfert (exactement simple ou aller_retour), dateDepart (format YYYY-MM-DD).",
+        "method": "POST",
+        "url": "http://localhost:3000/devis",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "keypairs",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "distanceKm",
+              "value": "={{ $fromAI('distanceKm', 'Distance en kilomètres entre départ et destination, nombre entier') }}"
+            },
+            {
+              "name": "nombrePassagers",
+              "value": "={{ $fromAI('nombrePassagers', 'Nombre total de passagers, nombre entier') }}"
+            },
+            {
+              "name": "typeTransfert",
+              "value": "={{ $fromAI('typeTransfert', 'Type de trajet : simple pour aller uniquement, aller_retour pour aller-retour') }}"
+            },
+            {
+              "name": "dateDepart",
+              "value": "={{ $fromAI('dateDepart', 'Date de départ au format YYYY-MM-DD, exemple 2026-08-15') }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "http-devis-001",
+      "name": "calculer_devis",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1380, 520]
     }
   ],
   "connections": {
@@ -122,7 +165,7 @@
         ]
       ]
     },
-    "calculer_devis": {
+    "calculer_distance": {
       "ai_tool": [
         [
           {
@@ -132,13 +175,24 @@
           }
         ]
       ]
+    },
+    "calculer_devis": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 1
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "neotravel-v2-2026",
+  "versionId": "neotravel-v3-2026",
   "meta": {
     "templateCredsSetupCompleted": false,
     "instanceId": ""
