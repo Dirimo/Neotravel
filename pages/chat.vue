@@ -144,6 +144,7 @@ interface DevisData {
   duree: string
   options: string[]
   validiteDevis: string
+  details?: Array<{ label: string; montant: number }>
 }
 
 interface Collected {
@@ -214,53 +215,88 @@ function vehiculePourPassagers(n: number): string {
   return 'Autocar Grande Capacité 85 places'
 }
 
-// ─── Devis calculator ─────────────────────────────────
-function calculerDevis(): DevisData {
-  const { trajet, distanceKm, passagers, typeTransfert, date } = collected.value
-
-  // Base tarifaire : distance × coût/km selon capacité
-  let base = distanceKm * (passagers <= 19 ? 1.8 : passagers <= 53 ? 2.2 : passagers <= 63 ? 2.8 : 3.5)
-
-  // Aller-retour
-  if (typeTransfert === 'aller_retour') base *= 1.85
-
-  // Saisonnalité (mois extrait de la date)
+// ─── Devis calculator (backend réel) ──────────────────
+function parseFrenchDate(dateStr: string): string {
   const moisMap: Record<string, number> = {
-    janvier: 1, février: 2, mars: 3, avril: 4, mai: 5, juin: 6,
-    juillet: 7, août: 8, septembre: 9, octobre: 10, novembre: 11, décembre: 12
+    'janvier': 0, 'février': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+    'juillet': 6, 'août': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11
   }
-  const dateLow = date.toLowerCase()
-  const moisNum = Object.entries(moisMap).find(([m]) => dateLow.includes(m))?.[1] ?? new Date().getMonth() + 1
-  const saisonnalite = [6, 7, 8, 12].includes(moisNum) ? 1.10 : [4, 5, 9, 10].includes(moisNum) ? 1.00 : 0.93
-  base *= saisonnalite
+  const lower = dateStr.toLowerCase()
 
-  // Marge 15%
-  const prixHT = Math.round(base * 1.15)
-  const tva = Math.round(prixHT * 0.10)
-  const prixTTC = prixHT + tva
+  const MOI = '[a-zàâäéèêëîïôùûüç]+'
 
-  // Durée estimée
+  // "14 août 2026" ou "14 mai 2025"
+  const withYear = lower.match(new RegExp(`(\\d{1,2})\\s+(${MOI})\\s+(\\d{4})`))
+  if (withYear) {
+    const moisNum = moisMap[withYear[2] ?? '']
+    if (moisNum !== undefined) return new Date(Number(withYear[3]), moisNum, Number(withYear[1]), 12).toISOString()
+  }
+
+  // "14 août" (sans année → prochaine occurrence)
+  const withoutYear = lower.match(new RegExp(`(\\d{1,2})\\s+(${MOI})`))
+  if (withoutYear) {
+    const moisNum = moisMap[withoutYear[2] ?? '']
+    if (moisNum !== undefined) {
+      const now = new Date()
+      let year = now.getFullYear()
+      const d = new Date(year, moisNum, Number(withoutYear[1]), 12)
+      if (d <= now) d.setFullYear(year + 1)
+      return d.toISOString()
+    }
+  }
+
+  // "14/05/2025" ou "14-05-2025"
+  const numeric = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+  if (numeric) return new Date(Number(numeric[3]), Number(numeric[2]) - 1, Number(numeric[1]), 12).toISOString()
+
+  // Fallback : 30 jours à partir d'aujourd'hui
+  const fallback = new Date()
+  fallback.setDate(fallback.getDate() + 30)
+  return fallback.toISOString()
+}
+
+const { token } = useAuth()
+
+async function calculerDevis(): Promise<DevisData> {
+  const { trajet, distanceKm, passagers, typeTransfert, date } = collected.value
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token.value) headers['Authorization'] = `Bearer ${token.value}`
+
+  const res = await fetch('http://localhost:3001/devis', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      distanceKm,
+      nombrePassagers: passagers,
+      typeTransfert: typeTransfert === 'aller_retour' ? 'aller_retour' : 'simple',
+      dateDepart: parseFrenchDate(date),
+    })
+  })
+  const data = await res.json()
+
+  if (data.type === 'cas_complexe') throw new Error('Votre demande nécessite un traitement personnalisé. Un conseiller vous contactera.')
+  if (data.type !== 'prix') throw new Error(`Erreur backend: ${data.type} — ${data.message ?? data.code ?? JSON.stringify(data)}`)
+
   const heures = Math.round(distanceKm / 80)
   const minutes = Math.round((distanceKm / 80 - heures) * 60)
-  const duree = `${heures}h${minutes > 0 ? String(minutes).padStart(2, '0') : ''}`
-
   return {
     reference: 'NEO-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
     trajet,
     dateDepart: date,
     passagers,
     typeVehicule: vehiculePourPassagers(passagers),
-    prixHT,
-    tva,
-    prixTTC,
-    duree,
+    prixHT: data.prixHT,
+    tva: data.tva,
+    prixTTC: data.prixTTC,
+    duree: `${heures}h${minutes > 0 ? String(minutes).padStart(2, '0') : ''}`,
     options: [],
-    validiteDevis: '72 heures'
+    validiteDevis: '72 heures',
+    details: data.details ?? []
   }
 }
 
 // ─── Conversation steps ───────────────────────────────
-function repondreBotStep(userMsg: string): Message {
+async function repondreBotStep(userMsg: string): Promise<Message> {
   const now = new Date()
 
   if (step.value === 0) {
@@ -301,15 +337,15 @@ function repondreBotStep(userMsg: string): Message {
   }
 
   if (step.value === 3) {
-    // Date → génération devis
     collected.value.date = userMsg
     step.value = 4
-    const devis = calculerDevis()
-    return {
-      role: 'assistant',
-      content: `Voici votre devis personnalisé 👇`,
-      timestamp: now,
-      devis
+    try {
+      const devis = await calculerDevis()
+      return { role: 'assistant', content: `Voici votre devis personnalisé 👇`, timestamp: now, devis }
+    } catch (err: unknown) {
+      step.value = 0
+      collected.value = { trajet: '', distanceKm: 0, passagers: 0, typeTransfert: null, date: '' }
+      return { role: 'assistant', content: err instanceof Error ? err.message : 'Une erreur est survenue.', timestamp: now }
     }
   }
 
@@ -336,7 +372,7 @@ async function sendMessage(text: string) {
   isTyping.value = true
   await delay(900 + Math.random() * 500)
 
-  const response = repondreBotStep(userMsg)
+  const response = await repondreBotStep(userMsg)
   messages.value.push(response)
   isTyping.value = false
 
@@ -368,6 +404,13 @@ function formatMessage(content: string) {
 
 function acceptDevis(devis: DevisData | null | undefined) {
   if (!devis) return
+  if (process.client) {
+    sessionStorage.setItem('neotravel_devis', JSON.stringify(devis))
+    const raw = localStorage.getItem('neotravel_history')
+    const history: DevisData[] = raw ? JSON.parse(raw) : []
+    history.unshift(devis)
+    localStorage.setItem('neotravel_history', JSON.stringify(history.slice(0, 20)))
+  }
   navigateTo({ path: '/devis', query: { ref: devis.reference } })
 }
 

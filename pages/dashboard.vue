@@ -36,7 +36,7 @@
             </svg>
           </div>
           <div>
-            <p class="font-semibold text-sm text-gray-900">{{ devis.length }} devis</p>
+            <p class="font-semibold text-sm text-gray-900">{{ tousLesDevis.length }} devis</p>
             <p class="text-gray-400 text-xs mt-0.5">dans votre historique</p>
           </div>
         </div>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Vide -->
-        <div v-else-if="devis.length === 0" class="px-6 py-16 text-center">
+        <div v-else-if="tousLesDevis.length === 0" class="px-6 py-16 text-center">
           <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
             <svg class="w-6 h-6 text-gray-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -78,7 +78,7 @@
         <!-- Tableau -->
         <div v-else>
           <div
-            v-for="d in devis"
+            v-for="d in tousLesDevis"
             :key="d.id"
             class="flex items-center justify-between px-6 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
           >
@@ -89,16 +89,21 @@
                 </svg>
               </div>
               <div>
-                <p class="text-sm font-medium text-gray-900">{{ d.fields['Numéro'] ?? d.fields['numero'] ?? 'Devis' }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">{{ d.fields['Demande'] ?? '—' }}</p>
+                <p class="text-sm font-medium text-gray-900">{{ d.trajet !== '—' ? d.trajet : d.reference }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ d.dateDepart }} · {{ d.passagers > 0 ? d.passagers + ' pers.' : '' }}</p>
               </div>
             </div>
-            <div class="flex items-center gap-6">
-              <span class="text-xs text-gray-400 hidden sm:block">{{ formatDate(d.fields['Date création']) }}</span>
-              <span class="font-semibold text-sm text-gray-900">{{ formatPrix(d.fields['Prix TTC']) }}</span>
-              <span :class="badgeClass(d.fields['Statut'])" class="text-xs font-medium px-2.5 py-1 rounded-full">
-                {{ d.fields['Statut'] ?? 'Brouillon' }}
+            <div class="flex items-center gap-4">
+              <span class="font-semibold text-sm text-gray-900">{{ formatPrix(d.prixTTC) }}</span>
+              <span :class="badgeClass(d.statut)" class="text-xs font-medium px-2.5 py-1 rounded-full">
+                {{ d.statut }}
               </span>
+              <button @click="voirDevis(d)" class="text-xs text-diamond-600 hover:text-diamond-700 font-medium flex items-center gap-1 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3"/>
+                </svg>
+                PDF
+              </button>
             </div>
           </div>
         </div>
@@ -109,43 +114,89 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'default' })
+import { ref, onMounted } from 'vue'
+definePageMeta({ layout: 'default', ssr: false })
 
 const { userEmail, token, isLoggedIn, logout, init } = useAuth()
 const router = useRouter()
 
-init()
-
-if (!isLoggedIn.value) {
-  router.push('/login')
-}
-
 const devis = ref<any[]>([])
+const historiqueLocal = ref<any[]>([])
 const loading = ref(true)
 const erreur = ref('')
 
 async function chargerDevis() {
-  if (!token.value) return
+  const raw = localStorage.getItem('neotravel_history')
+  if (raw) {
+    try { historiqueLocal.value = JSON.parse(raw) } catch { /* ignore */ }
+  }
+
+  if (!token.value) { loading.value = false; return }
   try {
     const res = await fetch('http://localhost:3001/devis/history', {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     const data = await res.json()
-    if (!res.ok) {
-      erreur.value = data.error ?? 'Erreur lors du chargement'
-      return
-    }
-    devis.value = data.devis
-  } catch {
-    erreur.value = 'Impossible de contacter le serveur.'
-  } finally {
+    if (res.ok) devis.value = data.devis
+  } catch { /* silencieux si backend indisponible */ } finally {
     loading.value = false
   }
 }
 
+const tousLesDevis = computed(() => {
+  const airtable = devis.value.map((d: any) => ({
+    id: d.id,
+    source: 'airtable',
+    reference: `NEO-${d.id.slice(-6).toUpperCase()}`,
+    trajet: '—',
+    dateDepart: d.fields['date création'] ?? d.fields['Date création'] ?? '—',
+    passagers: 0,
+    prixTTC: d.fields['prix TTC'] ?? d.fields['Prix_TTC'] ?? 0,
+    statut: d.fields['statut'] ?? d.fields['Statut'] ?? 'Brouillon',
+    raw: d
+  }))
+  const local = historiqueLocal.value.map((d: any, i: number) => ({
+    id: d.reference ?? `local-${i}`,
+    source: 'local',
+    reference: d.reference,
+    trajet: d.trajet,
+    dateDepart: d.dateDepart,
+    passagers: d.passagers,
+    prixTTC: d.prixTTC,
+    statut: 'Envoyé',
+    raw: d
+  }))
+  const refs = new Set(airtable.map(d => d.reference))
+  const localUniques = local.filter(d => !refs.has(d.reference))
+  return [...airtable, ...localUniques]
+})
+
 function handleLogout() {
   logout()
   router.push('/')
+}
+
+function voirDevis(d: any) {
+  if (d.source === 'local') {
+    sessionStorage.setItem('neotravel_devis', JSON.stringify(d.raw))
+    router.push(`/devis?ref=${d.reference}`)
+  } else {
+    const prixHT = Number(d.raw.fields['prix HT'] ?? d.raw.fields['Prix_HT'] ?? 0)
+    const tva = Number(d.raw.fields['tva'] ?? d.raw.fields['TVA'] ?? 0)
+    const prixTTC = Number(d.raw.fields['prix TTC'] ?? d.raw.fields['Prix_TTC'] ?? 0)
+    sessionStorage.setItem('neotravel_devis', JSON.stringify({
+      reference: d.reference,
+      trajet: '—',
+      dateDepart: d.dateDepart,
+      passagers: 0,
+      typeVehicule: '—',
+      prixHT,
+      tva,
+      prixTTC,
+      duree: '—'
+    }))
+    router.push(`/devis?ref=${d.reference}`)
+  }
 }
 
 function formatDate(val: unknown): string {
@@ -168,6 +219,11 @@ function badgeClass(statut: unknown): string {
 }
 
 onMounted(() => {
+  init()
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
   chargerDevis()
 })
 </script>

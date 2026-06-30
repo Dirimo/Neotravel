@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { calculer_devis, type ParametresDevis, type TypeTransfert } from "./calculer_devis";
-import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur } from "./airtable-client";
+import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, creerDevis } from "./airtable-client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -102,6 +102,32 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
 
     const resultat = calculer_devis(params);
     const statut = resultat.type === "prix" ? 200 : resultat.type === "cas_complexe" ? 200 : 422;
+
+    if (resultat.type === "prix") {
+      let userEmail: string | undefined;
+      const auth = (req.headers["authorization"] ?? "") as string;
+      if (auth.startsWith("Bearer ")) {
+        try {
+          const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { email: string };
+          userEmail = payload.email;
+        } catch { /* non connecté, on continue */ }
+      }
+      const now = new Date();
+      const validite = new Date(now);
+      validite.setDate(validite.getDate() + 3);
+      creerDevis({
+        dateCreation: now,
+        dateValidite: validite,
+        prixHT: resultat.prixHT,
+        tva: resultat.tva,
+        prixTTC: resultat.prixTTC,
+        detailJson: JSON.stringify(resultat.details),
+        typeResultat: "prix",
+        statut: "Envoyé",
+        ...(userEmail ? { userEmail } : {}),
+      }).catch((e: unknown) => console.error("Erreur sauvegarde Airtable:", e));
+    }
+
     repondre(res, statut, resultat);
     return;
   }
@@ -196,8 +222,13 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
       repondre(res, 401, { error: "Token invalide ou expiré" });
       return;
     }
-    const devis = await lireDevisUtilisateur(payload.email);
-    repondre(res, 200, { devis });
+    try {
+      const devis = await lireDevisUtilisateur(payload.email);
+      repondre(res, 200, { devis });
+    } catch (err) {
+      console.error("Erreur lireDevisUtilisateur:", err);
+      repondre(res, 500, { error: "Erreur lors de la récupération des devis" });
+    }
     return;
   }
 

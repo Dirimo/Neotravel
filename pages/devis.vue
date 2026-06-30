@@ -87,7 +87,7 @@
             <tfoot>
               <tr class="border-t-2 border-gray-200">
                 <td class="pt-3 pb-2 font-bold text-gray-900 text-base">Total TTC</td>
-                <td class="pt-3 pb-2 text-right font-bold text-diamond-600 text-xl">2 024 €</td>
+                <td class="pt-3 pb-2 text-right font-bold text-diamond-600 text-xl">{{ totalTTC }}</td>
               </tr>
             </tfoot>
           </table>
@@ -146,59 +146,73 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+definePageMeta({ layout: 'default', ssr: false })
+
+interface StoredDevis {
+  reference: string
+  trajet: string
+  dateDepart: string
+  passagers: number
+  typeVehicule: string
+  prixHT: number
+  tva: number
+  prixTTC: number
+  duree: string
+  details?: Array<{ label: string; montant: number }>
+}
+
 const route = useRoute()
 const devisRef = computed(() => route.query.ref || 'NEO-DEMO01')
 const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-const tripDetails = [
-  {
-    label: 'Trajet',
-    value: 'Paris (Gare de Lyon) → Lyon (Part-Dieu)',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
-  },
-  {
-    label: 'Date de départ',
-    value: '15 juillet 2025, 08h00',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
-  },
-  {
-    label: 'Passagers',
-    value: '48 personnes',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
-  },
-  {
-    label: 'Véhicule',
-    value: 'Autocar 53 places',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>'
-  },
-  {
-    label: 'Durée estimée',
-    value: '4h30',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-  },
-  {
-    label: 'Saison',
-    value: 'Haute saison (+10%)',
-    icon: '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 6.343l-.707-.707m12.728 12.728l-.707-.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>'
-  }
-]
+const d = ref<StoredDevis | null>(null)
+onMounted(() => {
+  const raw = sessionStorage.getItem('neotravel_devis')
+  if (raw) d.value = JSON.parse(raw)
+})
+
+const iconTrajet = '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+const iconDate = '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
+const iconPassagers = '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+const iconVehicule = '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>'
+const iconDuree = '<svg class="w-4 h-4 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+
+const tripDetails = computed(() => [
+  { label: 'Trajet', value: d.value?.trajet ?? 'Paris → Lyon', icon: iconTrajet },
+  { label: 'Date de départ', value: d.value?.dateDepart ?? '—', icon: iconDate },
+  { label: 'Passagers', value: d.value ? `${d.value.passagers} personnes` : '—', icon: iconPassagers },
+  { label: 'Véhicule', value: d.value?.typeVehicule ?? '—', icon: iconVehicule },
+  { label: 'Durée estimée', value: d.value?.duree ?? '—', icon: iconDuree },
+])
 
 const services = [
-  'Autocar confort 53 places — climatisé, WiFi à bord',
   'Chauffeur professionnel certifié',
-  'Guide à bord (journée complète)',
   'Assurance responsabilité civile incluse',
   'Assistance 24h/24 en cas d\'incident'
 ]
 
-const priceLines = [
-  { label: 'Tarif de base (transport)', amount: '1 560 €' },
-  { label: 'Majoration haute saison (+10%)', amount: '+156 €' },
-  { label: 'Guide à bord', amount: '+80 €' },
-  { label: 'Marge commerciale (15%)', amount: '+269 €' },
-  { label: 'Sous-total HT', amount: '1 840 €' },
-  { label: 'TVA (10%)', amount: '+184 €' }
-]
+const priceLines = computed(() => {
+  if (d.value?.details?.length) {
+    return d.value.details
+      .filter(l => !['Prix TTC'].includes(l.label))
+      .map(l => ({ label: l.label, amount: `${l.montant.toLocaleString('fr-FR')} €` }))
+  }
+  if (d.value) return [
+    { label: 'Prix HT', amount: `${d.value.prixHT.toLocaleString('fr-FR')} €` },
+    { label: 'TVA (10%)', amount: `+${d.value.tva.toLocaleString('fr-FR')} €` },
+  ]
+  return [
+    { label: 'Tarif de base (transport)', amount: '1 560 €' },
+    { label: 'Marge commerciale (15%)', amount: '+276 €' },
+    { label: 'Sous-total HT', amount: '1 836 €' },
+    { label: 'TVA (10%)', amount: '+184 €' },
+  ]
+})
+
+const totalTTC = computed(() =>
+  d.value ? `${d.value.prixTTC.toLocaleString('fr-FR')} €` : '2 020 €'
+)
 
 const downloading = ref(false)
 

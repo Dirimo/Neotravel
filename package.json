@@ -1,7 +1,6 @@
 {
   "name": "neotravel",
   "private": true,
-  "type": "module",
   "description": "Système automatisé de génération de devis pour transferts en autocar.",
   "scripts": {
     "dev": "nuxt dev",

@@ -51,6 +51,7 @@ export interface DevisInput {
   detailJson: string;
   typeResultat: "prix" | "cas_complexe" | "erreur_validation";
   statut?: "Brouillon" | "Envoyé" | "Accepté" | "Refusé" | "Expiré";
+  userEmail?: string;
 }
 
 // ─── Types internes ───────────────────────────────────────────────────────────
@@ -174,17 +175,18 @@ export async function creerDemande(input: DemandeInput): Promise<string> {
 /** Crée un devis et renvoie son ID Airtable. */
 export async function creerDevis(input: DevisInput): Promise<string> {
   const fields: AirtableFields = {
-    "Date_création":  input.dateCreation.toISOString().split("T")[0],
-    "Date_validité":  input.dateValidite.toISOString().split("T")[0],
-    Prix_HT:          input.prixHT,
-    TVA:              input.tva,
-    Prix_TTC:         input.prixTTC,
-    "Détail_JSON":    input.detailJson,
-    "Type_résultat":  input.typeResultat,
-    Statut:           input.statut ?? "Brouillon",
+    "date création":  input.dateCreation.toISOString().split("T")[0],
+    "date validité":  input.dateValidite.toISOString().split("T")[0],
+    "prix HT":        input.prixHT,
+    "tva":            input.tva,
+    "prix TTC":       input.prixTTC,
+    "détail json":    input.detailJson,
+    "type résultat":  input.typeResultat,
+    "statut":         input.statut ?? "Brouillon",
   };
 
   if (input.demandeId) fields["Demande"] = [{ id: input.demandeId }];
+  if (input.userEmail) fields["Utilisateurs"] = input.userEmail;
 
   const data = await http<AirtableCreateResponse>(`${BASE_URL}/Devis`, {
     method: "POST",
@@ -242,6 +244,5 @@ export async function trouverUtilisateur(
 export async function lireDevisUtilisateur(email: string): Promise<AirtableRecord[]> {
   return toutLire("Devis", {
     filterByFormula: `{Utilisateurs} = "${email}"`,
-    sort: JSON.stringify([{ field: "Date création", direction: "desc" }]),
   });
 }
