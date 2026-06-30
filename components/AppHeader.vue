@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const { isLoggedIn, init } = useAuth()
+onMounted(() => init())
+</script>
+
 <template>
   <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -17,7 +22,12 @@
 
       <!-- Navigation -->
       <nav class="flex items-center gap-3">
-        <NuxtLink to="/login" class="btn-outline">Connexion</NuxtLink>
+        <template v-if="isLoggedIn">
+          <NuxtLink to="/dashboard" class="btn-outline">Mon espace</NuxtLink>
+        </template>
+        <template v-else>
+          <NuxtLink to="/login" class="btn-outline">Connexion</NuxtLink>
+        </template>
         <NuxtLink to="/chat" class="btn-primary">
           Obtenir un devis
         </NuxtLink>

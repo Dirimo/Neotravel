@@ -203,3 +203,45 @@ export async function mettreAJourStatutDevis(
     body: JSON.stringify({ fields: { Statut: statut } }),
   });
 }
+
+// ─── Auth utilisateurs ────────────────────────────────────────────────────────
+
+export async function creerUtilisateur(
+  email: string, mdpHash: string, prenom: string, nom: string
+): Promise<string> {
+  const data = await http<AirtableCreateResponse>(`${BASE_URL}/Utilisateurs`, {
+    method: "POST",
+    body: JSON.stringify({
+      fields: {
+        "Email": email,
+        "Mot de passe": mdpHash,
+        "Prénom": prenom,
+        "Nom": nom,
+        "Date": new Date().toISOString().split("T")[0],
+      },
+    }),
+  });
+  return data.id;
+}
+
+export async function trouverUtilisateur(
+  email: string
+): Promise<{ id: string; mdpHash: string } | null> {
+  const records = await toutLire("Utilisateurs", {
+    filterByFormula: `{Email} = "${email}"`,
+    maxRecords: "1",
+  });
+  const record = records[0];
+  if (record == null) return null;
+  return {
+    id: record.id,
+    mdpHash: String(record.fields["Mot de passe"] ?? ""),
+  };
+}
+
+export async function lireDevisUtilisateur(email: string): Promise<AirtableRecord[]> {
+  return toutLire("Devis", {
+    filterByFormula: `{Utilisateurs} = "${email}"`,
+    sort: JSON.stringify([{ field: "Date création", direction: "desc" }]),
+  });
+}

@@ -36,12 +36,12 @@
               <h1 class="text-2xl font-bold text-gray-900">Devis de transport de groupe</h1>
               <p class="text-gray-400 text-sm mt-1">Émis le {{ today }}</p>
             </div>
-            <div class="flex flex-col items-center text-center">
-              <span class="text-xs text-gray-400 uppercase tracking-wider">Référence</span>
-              <p class="font-mono font-semibold text-gray-900 text-lg">{{ devisRef }}</p>
-              <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background-color:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:9999px;padding:4px 14px;margin-top:8px;">
-                <span style="width:7px;height:7px;border-radius:50%;background-color:#22c55e;display:inline-block;flex-shrink:0;"></span>
-                Accepté
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+              <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Référence</span>
+              <p style="font-family:monospace;font-weight:700;color:#111827;font-size:17px;margin:4px 0 0 0;">{{ devisRef }}</p>
+              <span style="margin-top:10px;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:700;background-color:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:16px;padding:5px 14px;line-height:1.2;">
+                <span style="width:7px;height:7px;min-width:7px;border-radius:50%;background-color:#22c55e;display:block;"></span>
+                <span>Accepté</span>
               </span>
             </div>
           </div>

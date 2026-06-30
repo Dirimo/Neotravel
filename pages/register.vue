@@ -102,6 +102,8 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: 'default' })
+
 const prenom = ref('')
 const nom = ref('')
 const email = ref('')
@@ -109,12 +111,27 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
+const router = useRouter()
+
 async function handleRegister() {
   error.value = ''
   loading.value = true
-  await new Promise(r => setTimeout(r, 800))
-  loading.value = false
-  // TODO: connecter à l'API auth backend
-  error.value = 'Inscription non encore connectée au backend.'
+  try {
+    const res = await fetch('http://localhost:3001/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, mdp: password.value, prenom: prenom.value, nom: nom.value })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      error.value = data.error ?? 'Erreur lors de la création du compte'
+      return
+    }
+    router.push('/login')
+  } catch {
+    error.value = 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
