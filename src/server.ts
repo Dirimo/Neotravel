@@ -232,6 +232,22 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     return;
   }
 
+  // GET /debug/champs — affiche les vrais noms de champs Airtable
+  if (req.method === "GET" && req.url === "/debug/champs") {
+    try {
+      const r = await fetch(
+        `https://api.airtable.com/v0/${process.env["AIRTABLE_BASE_ID"]}/Devis?maxRecords=1`,
+        { headers: { Authorization: `Bearer ${process.env["AIRTABLE_PAT"]}` } }
+      );
+      const data = await r.json() as { records?: Array<{ fields: Record<string, unknown> }> };
+      const champs = data.records?.[0] ? Object.keys(data.records[0].fields) : ["(aucun enregistrement)"];
+      repondre(res, 200, { champs });
+    } catch (e) {
+      repondre(res, 500, { error: String(e) });
+    }
+    return;
+  }
+
   repondre(res, 404, { error: "Route inconnue. Disponible : POST /devis, POST /devis-test, GET /health, POST /auth/register, POST /auth/login, GET /devis/history" });
 });
 

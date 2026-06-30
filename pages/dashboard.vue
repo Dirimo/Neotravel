@@ -149,10 +149,10 @@ const tousLesDevis = computed(() => {
     source: 'airtable',
     reference: `NEO-${d.id.slice(-6).toUpperCase()}`,
     trajet: '—',
-    dateDepart: d.fields['date création'] ?? d.fields['Date création'] ?? '—',
+    dateDepart: d.fields['Date_création'] ?? '—',
     passagers: 0,
-    prixTTC: d.fields['prix TTC'] ?? d.fields['Prix_TTC'] ?? 0,
-    statut: d.fields['statut'] ?? d.fields['Statut'] ?? 'Brouillon',
+    prixTTC: d.fields['Prix_TTC'] ?? 0,
+    statut: d.fields['Statut'] ?? 'Envoyé',
     raw: d
   }))
   const local = historiqueLocal.value.map((d: any, i: number) => ({
@@ -181,9 +181,9 @@ function voirDevis(d: any) {
     sessionStorage.setItem('neotravel_devis', JSON.stringify(d.raw))
     router.push(`/devis?ref=${d.reference}`)
   } else {
-    const prixHT = Number(d.raw.fields['prix HT'] ?? d.raw.fields['Prix_HT'] ?? 0)
-    const tva = Number(d.raw.fields['tva'] ?? d.raw.fields['TVA'] ?? 0)
-    const prixTTC = Number(d.raw.fields['prix TTC'] ?? d.raw.fields['Prix_TTC'] ?? 0)
+    const prixHT = Number(d.raw.fields['Prix_HT'] ?? 0)
+    const tva = Number(d.raw.fields['TVA'] ?? 0)
+    const prixTTC = Number(d.raw.fields['Prix_TTC'] ?? 0)
     sessionStorage.setItem('neotravel_devis', JSON.stringify({
       reference: d.reference,
       trajet: '—',

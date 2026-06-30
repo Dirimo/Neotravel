@@ -175,14 +175,14 @@ export async function creerDemande(input: DemandeInput): Promise<string> {
 /** Crée un devis et renvoie son ID Airtable. */
 export async function creerDevis(input: DevisInput): Promise<string> {
   const fields: AirtableFields = {
-    "date création":  input.dateCreation.toISOString().split("T")[0],
-    "date validité":  input.dateValidite.toISOString().split("T")[0],
-    "prix HT":        input.prixHT,
-    "tva":            input.tva,
-    "prix TTC":       input.prixTTC,
-    "détail json":    input.detailJson,
-    "type résultat":  input.typeResultat,
-    "statut":         input.statut ?? "Brouillon",
+    "Date_création":  input.dateCreation.toISOString().split("T")[0],
+    "Date_validité":  input.dateValidite.toISOString().split("T")[0],
+    "Prix_HT":        input.prixHT,
+    "TVA":            input.tva,
+    "Prix_TTC":       input.prixTTC,
+    "Détail_JSON":    input.detailJson,
+    "Type_résultat":  input.typeResultat,
+    "Statut":         input.statut ?? "Envoyé",
   };
 
   if (input.demandeId) fields["Demande"] = [{ id: input.demandeId }];
