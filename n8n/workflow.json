@@ -9,7 +9,7 @@
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
-      "position": [820, 300],
+      "position": [1136, 240],
       "webhookId": "neotravel-chat-webhook-001"
     },
     {
@@ -22,22 +22,21 @@
       "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
-      "position": [1060, 300]
+      "position": [1376, 240]
     },
     {
       "parameters": {
-        "model": "claude-haiku-4-5-20251001",
         "options": {}
       },
       "id": "vercel-model-001",
-      "name": "Vercel AI Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatVercelAi",
+      "name": "Vercel AI Gateway Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatVercelAiGateway",
       "typeVersion": 1,
-      "position": [900, 520],
+      "position": [1232, 432],
       "credentials": {
-        "vercelAiApi": {
-          "id": "",
-          "name": "NeoTravel - Vercel AI"
+        "vercelAiGatewayApi": {
+          "id": "0GhzrP8mBjfgzJWT",
+          "name": "Vercel AI Gateway account 2"
         }
       }
     },
@@ -50,15 +49,14 @@
       "name": "Window Buffer Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
-      "position": [1060, 520]
+      "position": [1376, 448]
     },
     {
       "parameters": {
         "name": "calculer_distance",
-        "description": "Calcule la distance routière réelle en kilomètres entre deux villes. Appelle cet outil dès que le client mentionne des noms de villes. Retourne distanceKm (entier).",
+        "description": "Calcule la distance routière réelle en kilomètres entre deux villes françaises. Appelle cet outil dès que le client mentionne des noms de villes. Retourne distanceKm (entier).",
         "method": "POST",
         "url": "http://localhost:3000/distance",
-        "authentication": "none",
         "sendBody": true,
         "specifyBody": "keypairs",
         "bodyParameters": {
@@ -73,19 +71,13 @@
             }
           ]
         },
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          }
-        }
+        "options": {}
       },
       "id": "http-distance-001",
       "name": "calculer_distance",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [1220, 520]
+      "position": [1536, 448]
     },
     {
       "parameters": {
@@ -93,7 +85,6 @@
         "description": "Calcule le prix du devis NeoTravel pour un transfert en autocar. Appelle cet outil uniquement quand tu as les 4 informations : distanceKm (nombre de km), nombrePassagers (nombre de passagers), typeTransfert (exactement simple ou aller_retour), dateDepart (format YYYY-MM-DD).",
         "method": "POST",
         "url": "http://localhost:3000/devis",
-        "authentication": "none",
         "sendBody": true,
         "specifyBody": "keypairs",
         "bodyParameters": {
@@ -116,19 +107,13 @@
             }
           ]
         },
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          }
-        }
+        "options": {}
       },
       "id": "http-devis-001",
       "name": "calculer_devis",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [1380, 520]
+      "position": [1696, 448]
     }
   ],
   "connections": {
@@ -143,7 +128,7 @@
         ]
       ]
     },
-    "Vercel AI Chat Model": {
+    "Vercel AI Gateway Chat Model": {
       "ai_languageModel": [
         [
           {
@@ -182,7 +167,7 @@
           {
             "node": "AI Agent",
             "type": "ai_tool",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -192,9 +177,8 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "neotravel-v3-2026",
   "meta": {
-    "templateCredsSetupCompleted": false,
-    "instanceId": ""
+    "templateCredsSetupCompleted": true,
+    "instanceId": "44f4bfc2801089ed86c533b28248973918ff328f7b99a1afb21c6c93619a43af"
   }
 }

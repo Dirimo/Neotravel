@@ -97,7 +97,7 @@
             <textarea
               ref="inputRef"
               v-model="inputText"
-              :placeholder="inputPlaceholder"
+              placeholder="Décrivez votre transfert en autocar..."
               rows="1"
               @keydown.enter.exact.prevent="handleSend"
               @input="autoResize"
@@ -146,25 +146,13 @@ interface DevisData {
   validiteDevis: string
 }
 
-interface Collected {
-  trajet: string
-  distanceKm: number
-  passagers: number
-  typeTransfert: 'aller_simple' | 'aller_retour' | null
-  date: string
-}
-
 // ─── State ───────────────────────────────────────────
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const isTyping = ref(false)
 const bottomAnchor = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
-const step = ref(0)
-
-const collected = ref<Collected>({
-  trajet: '', distanceKm: 0, passagers: 0, typeTransfert: null, date: ''
-})
+const sessionId = ref('session-' + Date.now())
 
 const suggestions = [
   'Paris → Lyon',
@@ -172,162 +160,7 @@ const suggestions = [
   'Lyon → Marseille'
 ]
 
-<<<<<<< HEAD
-const sessionId = ref('session-' + Date.now())
-const pendingDevis = ref<DevisData | null>(null)
-
-=======
-const inputPlaceholders: Record<number, string> = {
-  0: 'Ex : Paris → Lyon…',
-  1: 'Ex : 45 personnes…',
-  2: 'Aller simple ou aller-retour…',
-  3: 'Ex : 14 mai 2025…',
-}
-const inputPlaceholder = computed(() => inputPlaceholders[step.value] ?? 'Écrivez votre réponse…')
-
-// ─── Distance helper ──────────────────────────────────
-function estimerDistanceKm(trajet: string): number {
-  const t = trajet.toLowerCase()
-  const routes: [string[], string[], number][] = [
-    [['paris'], ['lyon'], 465],
-    [['paris'], ['bordeaux'], 584],
-    [['paris'], ['marseille'], 776],
-    [['paris'], ['nice'], 930],
-    [['paris'], ['strasbourg'], 490],
-    [['paris'], ['lille'], 225],
-    [['paris'], ['nantes'], 385],
-    [['paris'], ['toulouse'], 680],
-    [['paris'], ['rennes'], 350],
-    [['lyon'], ['marseille'], 315],
-    [['lyon'], ['nice'], 470],
-    [['lyon'], ['bordeaux'], 555],
-    [['bordeaux'], ['biarritz'], 190],
-    [['marseille'], ['nice'], 200],
-  ]
-  for (const [from, to, km] of routes) {
-    if (from.some(f => t.includes(f)) && to.some(d => t.includes(d))) return km
-    if (to.some(f => t.includes(f)) && from.some(d => t.includes(d))) return km
-  }
-  return 300
-}
-
-// ─── Vehicle helper ───────────────────────────────────
-function vehiculePourPassagers(n: number): string {
-  if (n <= 19) return 'Minibus 19 places'
-  if (n <= 53) return 'Autocar 53 places'
-  if (n <= 63) return 'Autocar Grand Tourisme 63 places'
-  return 'Autocar Grande Capacité 85 places'
-}
-
-// ─── Devis calculator ─────────────────────────────────
-function calculerDevis(): DevisData {
-  const { trajet, distanceKm, passagers, typeTransfert, date } = collected.value
-
-  // Base tarifaire : distance × coût/km selon capacité
-  let base = distanceKm * (passagers <= 19 ? 1.8 : passagers <= 53 ? 2.2 : passagers <= 63 ? 2.8 : 3.5)
-
-  // Aller-retour
-  if (typeTransfert === 'aller_retour') base *= 1.85
-
-  // Saisonnalité (mois extrait de la date)
-  const moisMap: Record<string, number> = {
-    janvier: 1, février: 2, mars: 3, avril: 4, mai: 5, juin: 6,
-    juillet: 7, août: 8, septembre: 9, octobre: 10, novembre: 11, décembre: 12
-  }
-  const dateLow = date.toLowerCase()
-  const moisNum = Object.entries(moisMap).find(([m]) => dateLow.includes(m))?.[1] ?? new Date().getMonth() + 1
-  const saisonnalite = [6, 7, 8, 12].includes(moisNum) ? 1.10 : [4, 5, 9, 10].includes(moisNum) ? 1.00 : 0.93
-  base *= saisonnalite
-
-  // Marge 15%
-  const prixHT = Math.round(base * 1.15)
-  const tva = Math.round(prixHT * 0.10)
-  const prixTTC = prixHT + tva
-
-  // Durée estimée
-  const heures = Math.round(distanceKm / 80)
-  const minutes = Math.round((distanceKm / 80 - heures) * 60)
-  const duree = `${heures}h${minutes > 0 ? String(minutes).padStart(2, '0') : ''}`
-
-  return {
-    reference: 'NEO-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-    trajet,
-    dateDepart: date,
-    passagers,
-    typeVehicule: vehiculePourPassagers(passagers),
-    prixHT,
-    tva,
-    prixTTC,
-    duree,
-    options: [],
-    validiteDevis: '72 heures'
-  }
-}
-
-// ─── Conversation steps ───────────────────────────────
-function repondreBotStep(userMsg: string): Message {
-  const now = new Date()
-
-  if (step.value === 0) {
-    // Trajet
-    collected.value.trajet = userMsg
-    collected.value.distanceKm = estimerDistanceKm(userMsg)
-    step.value = 1
-    return {
-      role: 'assistant',
-      content: `Parfait ! J'ai noté votre trajet **${userMsg}**, soit environ **${collected.value.distanceKm} km**.\n\nCombien de passagers seront dans votre groupe ?`,
-      timestamp: now
-    }
-  }
-
-  if (step.value === 1) {
-    // Passagers
-    const n = parseInt(userMsg.replace(/\D/g, ''), 10)
-    collected.value.passagers = isNaN(n) ? 30 : n
-    step.value = 2
-    return {
-      role: 'assistant',
-      content: `**${collected.value.passagers} passagers** — je prévois un **${vehiculePourPassagers(collected.value.passagers)}**.\n\nS'agit-il d'un aller simple ou d'un aller-retour ?`,
-      timestamp: now,
-      quickReplies: ['Aller simple', 'Aller-retour']
-    }
-  }
-
-  if (step.value === 2) {
-    // Type de transfert
-    const isAR = userMsg.toLowerCase().includes('retour') || userMsg.toLowerCase().includes('ar')
-    collected.value.typeTransfert = isAR ? 'aller_retour' : 'aller_simple'
-    step.value = 3
-    return {
-      role: 'assistant',
-      content: `${isAR ? 'Aller-retour noté ✓' : 'Aller simple noté ✓'}\n\nQuelle est la **date de départ** souhaitée ? (ex : 14 mai 2025)`,
-      timestamp: now
-    }
-  }
-
-  if (step.value === 3) {
-    // Date → génération devis
-    collected.value.date = userMsg
-    step.value = 4
-    const devis = calculerDevis()
-    return {
-      role: 'assistant',
-      content: `Voici votre devis personnalisé 👇`,
-      timestamp: now,
-      devis
-    }
-  }
-
-  // Après le devis
-  return {
-    role: 'assistant',
-    content: 'Souhaitez-vous modifier un critère ou faire une nouvelle demande ?',
-    timestamp: now
-  }
-}
-
 // ─── Actions ──────────────────────────────────────────
->>>>>>> a312ed1e47213668d0990fd2ae98293b866f1cc2
 async function sendMessage(text: string) {
   const userMsg = text.trim()
   if (!userMsg) return
@@ -340,13 +173,14 @@ async function sendMessage(text: string) {
   scrollToBottom()
 
   isTyping.value = true
-<<<<<<< HEAD
 
   try {
-    const data = await $fetch<{ reply: string }>('/api/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      body: { message: userMsg, sessionId: sessionId.value }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMsg, sessionId: sessionId.value })
     })
+    const data = await res.json() as { reply: string }
 
     messages.value.push({
       role: 'assistant',
@@ -357,18 +191,12 @@ async function sendMessage(text: string) {
   } catch {
     messages.value.push({
       role: 'assistant',
-      content: "Je suis temporairement indisponible. Vérifiez que n8n est bien lancé (`n8n start`) et que le workflow est en mode test.",
+      content: 'Je suis temporairement indisponible. Vérifiez que n8n est bien lancé et que le workflow est en mode test.',
       timestamp: new Date(),
       devis: null
     })
   }
 
-=======
-  await delay(900 + Math.random() * 500)
-
-  const response = repondreBotStep(userMsg)
-  messages.value.push(response)
->>>>>>> a312ed1e47213668d0990fd2ae98293b866f1cc2
   isTyping.value = false
 
   await nextTick()
@@ -377,15 +205,9 @@ async function sendMessage(text: string) {
 
 function handleSend() { sendMessage(inputText.value) }
 
-<<<<<<< HEAD
 function scrollToBottom() {
   bottomAnchor.value?.scrollIntoView({ behavior: 'smooth' })
 }
-
-=======
-function scrollToBottom() { bottomAnchor.value?.scrollIntoView({ behavior: 'smooth' }) }
-function delay(ms: number) { return new Promise(r => setTimeout(r, ms)) }
->>>>>>> a312ed1e47213668d0990fd2ae98293b866f1cc2
 
 function autoResize(e: Event) {
   const t = e.target as HTMLTextAreaElement
@@ -406,12 +228,10 @@ function formatMessage(content: string) {
 
 function acceptDevis(devis: DevisData | null | undefined) {
   if (!devis) return
-  navigateTo({ path: '/devis', query: { ref: devis.reference } })
+  window.location.assign(`/devis?ref=${devis.reference}`)
 }
 
 function refuseDevis() {
-  step.value = 0
-  collected.value = { trajet: '', distanceKm: 0, passagers: 0, typeTransfert: null, date: '' }
   messages.value.push({
     role: 'assistant',
     content: 'Pas de problème ! Dites-moi votre nouveau trajet et je recalcule.',
