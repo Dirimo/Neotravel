@@ -104,10 +104,10 @@ function coeffSaison(date: Date): { coef: number; label: string } {
 function coeffDelai(dateDemande: Date, dateDepart: Date): { coef: number; label: string } {
   const msJour = 1000 * 60 * 60 * 24;
   const jours  = Math.floor((dateDepart.getTime() - dateDemande.getTime()) / msJour);
-  if (jours <= 14) return { coef: 1.10, label: `DD_PRIORITAIRE ${jours}j +10 %` };
-  if (jours <= 30) return { coef: 1.05, label: `DD_URGENT ${jours}j +5 %` };
-  if (jours <= 90) return { coef: 0.95, label: `DD_NORMAL ${jours}j -5 %` };
-  return             { coef: 0.90, label: `DD_3MOISETPLUS ${jours}j -10 %` };
+  if (jours <= 14) return { coef: 1.10, label: `Réservation prioritaire (J-${jours}) +10 %` };
+  if (jours <= 30) return { coef: 1.05, label: `Réservation urgente (J-${jours}) +5 %` };
+  if (jours <= 90) return { coef: 0.95, label: `Réservation standard (J-${jours}) -5 %` };
+  return             { coef: 0.90, label: `Réservation anticipée (J-${jours}) -10 %` };
 }
 
 // Pondération capacité véhicule

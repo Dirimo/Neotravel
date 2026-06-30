@@ -51,6 +51,7 @@ export interface DevisInput {
   detailJson: string;
   typeResultat: "prix" | "cas_complexe" | "erreur_validation";
   statut?: "Brouillon" | "Envoyé" | "Accepté" | "Refusé" | "Expiré";
+  userEmail?: string;
 }
 
 // ─── Types internes ───────────────────────────────────────────────────────────
@@ -176,15 +177,16 @@ export async function creerDevis(input: DevisInput): Promise<string> {
   const fields: AirtableFields = {
     "Date_création":  input.dateCreation.toISOString().split("T")[0],
     "Date_validité":  input.dateValidite.toISOString().split("T")[0],
-    Prix_HT:          input.prixHT,
-    TVA:              input.tva,
-    Prix_TTC:         input.prixTTC,
+    "Prix_HT":        input.prixHT,
+    "TVA":            input.tva,
+    "Prix_TTC":       input.prixTTC,
     "Détail_JSON":    input.detailJson,
     "Type_résultat":  input.typeResultat,
-    Statut:           input.statut ?? "Brouillon",
+    "Statut":         input.statut ?? "Envoyé",
   };
 
   if (input.demandeId) fields["Demande"] = [{ id: input.demandeId }];
+  if (input.userEmail) fields["Utilisateurs"] = input.userEmail;
 
   const data = await http<AirtableCreateResponse>(`${BASE_URL}/Devis`, {
     method: "POST",
@@ -202,4 +204,49 @@ export async function mettreAJourStatutDevis(
     method: "PATCH",
     body: JSON.stringify({ fields: { Statut: statut } }),
   });
+}
+
+// ─── Auth utilisateurs ────────────────────────────────────────────────────────
+
+export async function creerUtilisateur(
+  email: string, mdpHash: string, prenom: string, nom: string
+): Promise<string> {
+  const data = await http<AirtableCreateResponse>(`${BASE_URL}/Utilisateurs`, {
+    method: "POST",
+    body: JSON.stringify({
+      fields: {
+        "Email": email,
+        "Mot de passe": mdpHash,
+        "Prénom": prenom,
+        "Nom": nom,
+        "Date": new Date().toISOString().split("T")[0],
+      },
+    }),
+  });
+  return data.id;
+}
+
+export async function trouverUtilisateur(
+  email: string
+): Promise<{ id: string; mdpHash: string } | null> {
+  const records = await toutLire("Utilisateurs", {
+    filterByFormula: `{Email} = "${email}"`,
+    maxRecords: "1",
+  });
+  const record = records[0];
+  if (record == null) return null;
+  return {
+    id: record.id,
+    mdpHash: String(record.fields["Mot de passe"] ?? ""),
+  };
+}
+
+export async function lireDevisUtilisateur(email: string): Promise<AirtableRecord[]> {
+  return toutLire("Devis", {
+    filterByFormula: `{Utilisateurs} = "${email}"`,
+  });
+}
+
+export async function lireTousLesDevis(): Promise<AirtableRecord[]> {
+  return toutLire("Devis");
 }

@@ -1,7 +1,7 @@
 <template>
-  <div class="h-screen flex flex-col bg-white overflow-hidden">
+  <div class="h-screen flex flex-col bg-psf-cream-100 overflow-hidden">
     <AppHeader />
-    <main class="flex-1 pt-16 overflow-hidden">
+    <main class="flex-1 overflow-hidden flex flex-col">
       <slot />
     </main>
   </div>

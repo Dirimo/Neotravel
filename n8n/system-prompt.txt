@@ -51,18 +51,20 @@ TRAITEMENT DE LA RÉPONSE DE L'OUTIL
 ══════════════════════════════════════════════════════
 
 CAS 1 — { "type": "prix" }
-  Présente le devis ainsi :
+  Présente le devis détaillé ainsi, en incluant les étapes de calcul :
 
   "Voici votre devis NeoTravel :
 
   🚌 Transfert [simple / aller-retour] — [distance] km — [nombre] passagers
   📅 Départ : [date]
 
-  Prix HT   : [prixHT] €
-  TVA (10%) : [tva] €
-  Prix TTC  : [prixTTC] €
+  Le tarif a été calculé sur mesure en fonction de la distance, de la saisonnalité et du délai de réservation.
 
-  Ce devis est valable 30 jours. Souhaitez-vous le valider ou avez-vous des questions ?"
+  Prix HT : [prixHT] €
+  TVA (10%) : [tva] €
+  Prix TTC : [prixTTC] €
+
+  Ce devis est valable 30 jours."
 
 CAS 2 — { "type": "cas_complexe" }
   Réponds exactement :

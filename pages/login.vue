@@ -12,7 +12,7 @@
             <path d="M2.5 18.5 C5.5 14.5 9.5 9.5 16.5 5.5" stroke="white" stroke-width="0.85" stroke-dasharray="2.5 2" fill="none" opacity="1"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-gray-900">Connexion</h1>
+        <h1 class="text-2xl font-display text-psf-green-900 uppercase tracking-widest">Connexion</h1>
         <p class="text-sm text-gray-400 mt-1">Accédez à votre espace Neotravel</p>
       </div>
 
@@ -83,17 +83,36 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: 'default' })
+
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
+const { login } = useAuth()
+const router = useRouter()
+
 async function handleLogin() {
   error.value = ''
   loading.value = true
-  await new Promise(r => setTimeout(r, 800))
-  loading.value = false
-  // TODO: connecter à l'API auth backend
-  error.value = 'Authentification non encore connectée au backend.'
+  try {
+    const res = await fetch('http://localhost:3001/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, mdp: password.value })
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      error.value = data.error ?? 'Erreur de connexion'
+      return
+    }
+    login(data.token, data.email)
+    router.push('/dashboard')
+  } catch {
+    error.value = 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>

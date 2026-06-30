@@ -8,29 +8,89 @@
   }
 
   body {
-    @apply font-sans text-gray-800 bg-white;
+    font-family: theme('fontFamily.body');
+    @apply text-psf-black-green bg-psf-cream-100;
+    font-size: 16px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+  }
+
+  h1, .display-title {
+    font-family: theme('fontFamily.display');
+    @apply uppercase;
+    font-size: clamp(64px, 12vw, 180px);
+    line-height: 0.82;
+    letter-spacing: -0.055em;
+    font-weight: 900;
+  }
+
+  h2 {
+    font-family: theme('fontFamily.display');
+    @apply uppercase;
+    font-size: clamp(44px, 7vw, 120px);
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+  }
+
+  h3 {
+    font-family: theme('fontFamily.heading');
+    @apply uppercase;
+    font-size: clamp(28px, 3.8vw, 64px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-3 rounded-lg bg-diamond-500 text-white font-semibold tracking-wide text-sm uppercase transition-all duration-200 hover:bg-diamond-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
-  }
-
-  .btn-outline {
-    @apply inline-flex items-center justify-center px-5 py-2 rounded-lg border border-diamond-500 text-diamond-600 font-medium text-sm transition-all duration-200 hover:bg-diamond-50 hover:border-diamond-600;
-  }
-
-  .btn-ghost {
-    @apply inline-flex items-center justify-center px-5 py-2 rounded-lg text-gray-600 font-medium text-sm transition-all duration-200 hover:text-diamond-600 hover:bg-gray-50;
-  }
-
-  .card {
-    @apply bg-white rounded-2xl border border-gray-100 shadow-sm p-8 transition-shadow duration-200 hover:shadow-md;
+  .kicker,
+  .nav-link,
+  .badge {
+    font-family: theme('fontFamily.body');
+    @apply uppercase;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
   }
 
   .nav-link {
-    @apply text-gray-600 font-medium text-sm transition-colors duration-150 hover:text-diamond-600;
+    @apply text-inherit no-underline opacity-90 transition-all duration-200;
+  }
+
+  .nav-link:hover {
+    @apply opacity-100 underline;
+    text-underline-offset: 6px;
+  }
+
+  .button {
+    font-family: theme('fontFamily.body');
+    @apply inline-flex items-center justify-center min-h-[48px] px-6 rounded-none border-[1.5px] border-current no-underline transition-all duration-200 uppercase font-bold text-xs tracking-widest cursor-pointer;
+  }
+
+  .button:hover {
+    @apply -translate-y-[2px];
+  }
+
+  .button--dark {
+    @apply bg-psf-green-900 text-psf-cream-100;
+  }
+
+  .button--lime {
+    @apply bg-psf-lime-300 text-psf-green-900 border-psf-lime-300;
+  }
+
+  .button--ghost {
+    @apply bg-transparent text-psf-green-900;
+  }
+
+  /* Replacing old classes used in some pages temporarily to avoid breaking everything */
+  .btn-primary {
+    @apply button button--lime;
+  }
+  .btn-outline {
+    @apply button button--ghost;
+  }
+  .btn-ghost {
+    @apply button button--ghost border-transparent;
   }
 }
 
