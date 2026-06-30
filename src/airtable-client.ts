@@ -241,13 +241,41 @@ export async function trouverUtilisateur(
   };
 }
 
+/** Complète chaque devis avec les champs (Référence, trajet, passagers...) de sa Demande liée. */
+async function enrichirAvecDemandes(devisRecords: AirtableRecord[]): Promise<AirtableRecord[]> {
+  const aUneDemande = devisRecords.some((d) => ((d.fields["Demande"] as string[] | undefined) ?? []).length > 0);
+  if (!aUneDemande) return devisRecords;
+
+  const demandes = await toutLire("Demandes");
+  const parId = new Map(demandes.map((r) => [r.id, r.fields]));
+
+  return devisRecords.map((d) => {
+    const demandeId = (d.fields["Demande"] as string[] | undefined)?.[0];
+    const demandeFields = demandeId ? parId.get(demandeId) : undefined;
+    if (!demandeFields) return d;
+    return {
+      ...d,
+      fields: {
+        ...d.fields,
+        "Référence":         demandeFields["Référence"],
+        "Lieu_départ":       demandeFields["Lieu_départ"],
+        "Lieu_arrivée":      demandeFields["Lieu_arrivée"],
+        "Nombre_passagers":  demandeFields["Nombre_passagers"],
+        "Date_départ":       demandeFields["Date_départ"],
+      },
+    };
+  });
+}
+
 export async function lireDevisUtilisateur(email: string): Promise<AirtableRecord[]> {
-  return toutLire("Devis", {
+  const devis = await toutLire("Devis", {
     filterByFormula: `{Utilisateurs} = "${email}"`,
   });
+  return enrichirAvecDemandes(devis);
 }
 
 /** Lit tous les devis, toutes utilisatrices et utilisateurs confondus (vue direction). */
 export async function lireTousLesDevis(): Promise<AirtableRecord[]> {
-  return toutLire("Devis");
+  const devis = await toutLire("Devis");
+  return enrichirAvecDemandes(devis);
 }

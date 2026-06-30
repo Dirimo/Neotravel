@@ -148,10 +148,12 @@ const tousLesDevis = computed(() => {
   const airtable = devis.value.map((d: any) => ({
     id: d.id,
     source: 'airtable',
-    reference: `NEO-${d.id.slice(-6).toUpperCase()}`,
-    trajet: '—',
-    dateDepart: d.fields['Date_création'] ?? '—',
-    passagers: 0,
+    reference: d.fields['Référence'] ?? `NEO-${d.id.slice(-6).toUpperCase()}`,
+    trajet: d.fields['Lieu_arrivée']
+      ? `${d.fields['Lieu_départ']} → ${d.fields['Lieu_arrivée']}`
+      : (d.fields['Lieu_départ'] ?? '—'),
+    dateDepart: d.fields['Date_départ'] ?? d.fields['Date_création'] ?? '—',
+    passagers: Number(d.fields['Nombre_passagers'] ?? 0),
     prixTTC: d.fields['Prix_TTC'] ?? 0,
     statut: d.fields['Statut'] ?? 'Envoyé',
     raw: d
@@ -187,9 +189,9 @@ function voirDevis(d: any) {
     const prixTTC = Number(d.raw.fields['Prix_TTC'] ?? 0)
     sessionStorage.setItem('neotravel_devis', JSON.stringify({
       reference: d.reference,
-      trajet: '—',
+      trajet: d.trajet,
       dateDepart: d.dateDepart,
-      passagers: 0,
+      passagers: d.passagers,
       typeVehicule: '—',
       prixHT,
       tva,

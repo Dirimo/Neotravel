@@ -253,6 +253,7 @@ const { t, lang } = useLang()
 
 async function calculerDevis(): Promise<DevisData> {
   const { trajet, distanceKm, passagers, typeTransfert, date } = collected.value
+  const reference = 'NEO-' + Math.random().toString(36).substring(2, 8).toUpperCase()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token.value) headers['Authorization'] = `Bearer ${token.value}`
 
@@ -264,6 +265,8 @@ async function calculerDevis(): Promise<DevisData> {
       nombrePassagers: passagers,
       typeTransfert: typeTransfert === 'aller_retour' ? 'aller_retour' : 'simple',
       dateDepart: parseFrenchDate(date),
+      reference,
+      trajet,
     })
   })
   const data = await res.json()
@@ -274,7 +277,7 @@ async function calculerDevis(): Promise<DevisData> {
   const heures = Math.round(distanceKm / 80)
   const minutes = Math.round((distanceKm / 80 - heures) * 60)
   return {
-    reference: 'NEO-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    reference,
     trajet,
     dateDepart: date,
     passagers,

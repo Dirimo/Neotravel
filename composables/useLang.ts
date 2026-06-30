@@ -112,7 +112,17 @@ const strings = {
     'pilotage.chart.status': 'Répartition par statut',
     'pilotage.chart.monthly': 'Volume de devis par mois',
     'pilotage.empty':       'Aucune donnée pour le moment',
-    'pilotage.denied':      'Accès réservé à la direction',
+    'pilotage.denied':       'Accès réservé à la direction',
+    'pilotage.table.title':  'Liste des demandes',
+    'pilotage.table.filter': 'Filtrer par statut',
+    'pilotage.table.all':    'Tous',
+    'pilotage.table.ref':    'Référence',
+    'pilotage.table.trajet': 'Trajet',
+    'pilotage.table.date':   'Date départ',
+    'pilotage.table.pax':    'Passagers',
+    'pilotage.table.prix':   'Prix TTC',
+    'pilotage.table.statut': 'Statut',
+    'pilotage.table.saving': 'Mise à jour…',
   },
   en: {
     // Header
@@ -225,7 +235,17 @@ const strings = {
     'pilotage.chart.status': 'Breakdown by status',
     'pilotage.chart.monthly': 'Quote volume per month',
     'pilotage.empty':       'No data yet',
-    'pilotage.denied':      'Access restricted to management',
+    'pilotage.denied':       'Access restricted to management',
+    'pilotage.table.title':  'Leads list',
+    'pilotage.table.filter': 'Filter by status',
+    'pilotage.table.all':    'All',
+    'pilotage.table.ref':    'Reference',
+    'pilotage.table.trajet': 'Journey',
+    'pilotage.table.date':   'Departure',
+    'pilotage.table.pax':    'Passengers',
+    'pilotage.table.prix':   'Price incl. VAT',
+    'pilotage.table.statut': 'Status',
+    'pilotage.table.saving': 'Updating…',
   }
 } satisfies Record<Lang, Record<string, string>>
 

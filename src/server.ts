@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { calculer_devis, type ParametresDevis, type TypeTransfert } from "./calculer_devis";
-import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, lireTousLesDevis, creerDevis } from "./airtable-client";
+import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, lireTousLesDevis, creerDevis, creerDemande, mettreAJourStatutDevis } from "./airtable-client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -124,17 +124,38 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
       const now = new Date();
       const validite = new Date(now);
       validite.setDate(validite.getDate() + 3);
-      creerDevis({
-        dateCreation: now,
-        dateValidite: validite,
-        prixHT: resultat.prixHT,
-        tva: resultat.tva,
-        prixTTC: resultat.prixTTC,
-        detailJson: JSON.stringify(resultat.details),
-        typeResultat: "prix",
-        statut: "Envoyé",
-        ...(userEmail ? { userEmail } : {}),
-      }).catch((e: unknown) => console.error("Erreur sauvegarde Airtable:", e));
+
+      const reference = typeof body["reference"] === "string" && body["reference"]
+        ? body["reference"] as string
+        : `NEO-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const trajetBrut = typeof body["trajet"] === "string" ? body["trajet"] as string : "";
+      const [lieuDepart, lieuArrivee] = trajetBrut.includes("→")
+        ? trajetBrut.split("→").map((s) => s.trim())
+        : [trajetBrut || undefined, undefined];
+
+      creerDemande({
+        reference,
+        dateDemande,
+        dateDepart: params.dateDepart,
+        distanceKm: params.distanceKm,
+        nombrePassagers: params.nombrePassagers,
+        typeTransfert,
+        ...(lieuDepart ? { lieuDepart } : {}),
+        ...(lieuArrivee ? { lieuArrivee } : {}),
+      })
+        .then((demandeId) => creerDevis({
+          demandeId,
+          dateCreation: now,
+          dateValidite: validite,
+          prixHT: resultat.prixHT,
+          tva: resultat.tva,
+          prixTTC: resultat.prixTTC,
+          detailJson: JSON.stringify(resultat.details),
+          typeResultat: "prix",
+          statut: "Envoyé",
+          ...(userEmail ? { userEmail } : {}),
+        }))
+        .catch((e: unknown) => console.error("Erreur sauvegarde Airtable:", e));
     }
 
     repondre(res, statut, resultat);
@@ -267,6 +288,50 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     } catch (err) {
       console.error("Erreur lireTousLesDevis:", err);
       repondre(res, 500, { error: "Erreur lors de la récupération des devis" });
+    }
+    return;
+  }
+
+  // PATCH /devis/:id/statut — changer le statut d'un devis (admin uniquement)
+  const patchStatut = req.url?.match(/^\/devis\/([^/]+)\/statut$/);
+  if (req.method === "PATCH" && patchStatut) {
+    const devisId = patchStatut[1] as string;
+    const authHeader = req.headers["authorization"] ?? "";
+    const token = authHeader.replace("Bearer ", "");
+    if (!token) {
+      repondre(res, 401, { error: "Token manquant" });
+      return;
+    }
+    let payload: { email: string; role?: string };
+    try {
+      payload = jwt.verify(token, JWT_SECRET) as { email: string; role?: string };
+    } catch {
+      repondre(res, 401, { error: "Token invalide ou expiré" });
+      return;
+    }
+    if (payload.role !== "admin") {
+      repondre(res, 403, { error: "Accès réservé aux comptes administrateur" });
+      return;
+    }
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(await lireCorps(req)) as Record<string, unknown>;
+    } catch {
+      repondre(res, 400, { error: "JSON invalide" });
+      return;
+    }
+    const statutsValides = ["Brouillon", "Envoyé", "Accepté", "Refusé", "Expiré"];
+    const statut = body["statut"] as string;
+    if (!statutsValides.includes(statut)) {
+      repondre(res, 400, { error: `Statut invalide. Valeurs acceptées : ${statutsValides.join(", ")}` });
+      return;
+    }
+    try {
+      await mettreAJourStatutDevis(devisId, statut as "Brouillon" | "Envoyé" | "Accepté" | "Refusé" | "Expiré");
+      repondre(res, 200, { ok: true, devisId, statut });
+    } catch (err) {
+      console.error("Erreur mettreAJourStatutDevis:", err);
+      repondre(res, 500, { error: "Erreur lors de la mise à jour du statut" });
     }
     return;
   }
