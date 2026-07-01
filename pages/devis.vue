@@ -2,8 +2,8 @@
   <div class="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-start justify-center py-12 px-4">
     <div class="w-full max-w-2xl animate-fade-in">
 
-      <!-- Success banner -->
-      <div class="flex items-center gap-4 bg-diamond-500 text-white rounded-2xl px-6 py-5 mb-8 shadow-lg">
+      <!-- Banner dynamique selon la réponse du client -->
+      <div v-if="reponse === 'Accepté'" class="flex items-center gap-4 bg-diamond-500 text-white rounded-2xl px-6 py-5 mb-8 shadow-lg">
         <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -12,6 +12,30 @@
         <div>
           <h2 class="font-bold text-lg">{{ t('devis.accepted') }}</h2>
           <p class="text-diamond-100 text-sm">{{ t('devis.accepted.sub') }}</p>
+        </div>
+      </div>
+
+      <div v-else-if="reponse === 'Refusé'" class="flex items-center gap-4 bg-gray-700 text-white rounded-2xl px-6 py-5 mb-8 shadow-lg">
+        <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg">{{ t('devis.refused') }}</h2>
+          <p class="text-gray-300 text-sm">{{ t('devis.refused.sub') }}</p>
+        </div>
+      </div>
+
+      <div v-else class="flex items-center gap-4 bg-white border border-gray-100 rounded-2xl px-6 py-5 mb-8 shadow-sm">
+        <div class="w-12 h-12 rounded-full bg-diamond-50 flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-diamond-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg text-gray-900">{{ t('devis.pending') }}</h2>
+          <p class="text-gray-400 text-sm">{{ t('devis.pending.sub') }}</p>
         </div>
       </div>
 
@@ -39,9 +63,17 @@
             <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
               <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">{{ t('devis.ref') }}</span>
               <p style="font-family:monospace;font-weight:700;color:#111827;font-size:17px;margin:4px 0 0 0;">{{ devisRef }}</p>
-              <span style="margin-top:10px;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:700;background-color:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:16px;padding:5px 14px;line-height:1.2;">
-                <span style="width:7px;height:7px;min-width:7px;border-radius:50%;background-color:#22c55e;display:block;"></span>
-                <span>Accepté</span>
+              <span v-if="reponse === 'Accepté'" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;background-color:#f0fdf4;color:#15803d;border:1.5px solid #86efac;border-radius:16px;padding:5px 14px;">
+                <span style="width:7px;height:7px;border-radius:50%;background-color:#22c55e;display:block;"></span>
+                Accepté
+              </span>
+              <span v-else-if="reponse === 'Refusé'" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;background-color:#f9fafb;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:16px;padding:5px 14px;">
+                <span style="width:7px;height:7px;border-radius:50%;background-color:#9ca3af;display:block;"></span>
+                Refusé
+              </span>
+              <span v-else style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;background-color:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;border-radius:16px;padding:5px 14px;">
+                <span style="width:7px;height:7px;border-radius:50%;background-color:#3b82f6;display:block;"></span>
+                En attente
               </span>
             </div>
           </div>
@@ -111,8 +143,39 @@
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex flex-col sm:flex-row gap-3 mt-6">
+      <!-- Actions client : Accepter / Refuser -->
+      <div v-if="!reponse" class="flex flex-col sm:flex-row gap-3 mt-6">
+        <button
+          @click="repondreDevis('Refusé')"
+          :disabled="enCours"
+          class="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          {{ t('devis.btn.refuse') }}
+        </button>
+        <button
+          @click="repondreDevis('Accepté')"
+          :disabled="enCours"
+          class="flex-1 flex items-center justify-center gap-2 bg-diamond-500 hover:bg-diamond-600 text-white rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-50"
+        >
+          <svg v-if="!enCours" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          <svg v-else class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          {{ t('devis.btn.accept') }}
+        </button>
+      </div>
+
+      <!-- Message d'erreur réponse -->
+      <p v-if="erreurReponse" class="mt-3 text-xs text-red-500 text-center">{{ erreurReponse }}</p>
+
+      <!-- Actions secondaires (PDF + nouvelle demande) -->
+      <div class="flex flex-col sm:flex-row gap-3 mt-3">
         <button
           @click="downloadPDF"
           :disabled="downloading"
@@ -129,11 +192,8 @@
         </button>
         <NuxtLink
           to="/chat"
-          class="flex-1 flex items-center justify-center gap-2 bg-diamond-500 hover:bg-diamond-600 text-white rounded-xl py-3 text-sm font-semibold transition-colors"
+          class="flex-1 flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
           {{ t('devis.new') }}
         </NuxtLink>
       </div>
@@ -212,6 +272,36 @@ const priceLines = computed(() => {
 const totalTTC = computed(() =>
   d.value ? `${d.value.prixTTC.toLocaleString('fr-FR')} €` : '2 020 €'
 )
+
+const reponse = ref<'Accepté' | 'Refusé' | null>(null)
+const enCours = ref(false)
+const erreurReponse = ref('')
+
+async function repondreDevis(statut: 'Accepté' | 'Refusé') {
+  enCours.value = true
+  erreurReponse.value = ''
+  const ref = String(devisRef.value)
+  console.log('[devis] repondreDevis', statut, 'référence:', ref)
+  try {
+    const res = await fetch('http://localhost:3001/devis/reponse', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference: ref, statut })
+    })
+    const data = await res.json()
+    console.log('[devis] réponse backend', res.status, data)
+    if (res.ok) {
+      reponse.value = statut
+    } else {
+      erreurReponse.value = data.error ?? `Erreur ${res.status}`
+    }
+  } catch (e) {
+    console.error('[devis] erreur fetch', e)
+    erreurReponse.value = 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.'
+  } finally {
+    enCours.value = false
+  }
+}
 
 const downloading = ref(false)
 

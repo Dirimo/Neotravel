@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { calculer_devis, type ParametresDevis, type TypeTransfert } from "./calculer_devis";
-import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, lireTousLesDevis, creerDevis, creerDemande, mettreAJourStatutDevis } from "./airtable-client";
+import { creerUtilisateur, trouverUtilisateur, lireDevisUtilisateur, lireTousLesDevis, creerDevis, creerDemande, mettreAJourStatutDevis, lireDevisParReference } from "./airtable-client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -288,6 +288,36 @@ const serveur = createServer(async (req: IncomingMessage, res: ServerResponse) =
     } catch (err) {
       console.error("Erreur lireTousLesDevis:", err);
       repondre(res, 500, { error: "Erreur lors de la récupération des devis" });
+    }
+    return;
+  }
+
+  // PATCH /devis/reponse — client accepte ou refuse son devis via sa référence (sans admin)
+  if (req.method === "PATCH" && req.url === "/devis/reponse") {
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(await lireCorps(req)) as Record<string, unknown>;
+    } catch {
+      repondre(res, 400, { error: "JSON invalide" });
+      return;
+    }
+    const reference = body["reference"] as string;
+    const statut = body["statut"] as string;
+    if (!reference || !["Accepté", "Refusé"].includes(statut)) {
+      repondre(res, 400, { error: "Champs requis : reference, statut ('Accepté' ou 'Refusé')" });
+      return;
+    }
+    try {
+      const devisId = await lireDevisParReference(reference);
+      if (!devisId) {
+        repondre(res, 404, { error: "Devis introuvable pour cette référence" });
+        return;
+      }
+      await mettreAJourStatutDevis(devisId, statut as "Accepté" | "Refusé");
+      repondre(res, 200, { ok: true, reference, statut });
+    } catch (err) {
+      console.error("Erreur réponse client:", err);
+      repondre(res, 500, { error: "Erreur lors de la mise à jour du statut" });
     }
     return;
   }

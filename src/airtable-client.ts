@@ -274,6 +274,27 @@ export async function lireDevisUtilisateur(email: string): Promise<AirtableRecor
   return enrichirAvecDemandes(devis);
 }
 
+/** Retrouve l'ID Airtable du Devis lié à une Demande par sa référence.
+ *  Fallback : scan tous les Devis enrichis si le lien Demande→Devis est absent. */
+export async function lireDevisParReference(reference: string): Promise<string | null> {
+  // Chemin rapide : Demande → Devis lié
+  const demandes = await toutLire("Demandes", {
+    filterByFormula: `{Référence} = "${reference}"`,
+    maxRecords: "1",
+  });
+  const demande = demandes[0];
+  if (demande) {
+    const devisLies = demande.fields["Devis"] as string[] | undefined;
+    if (devisLies?.[0]) return devisLies[0];
+  }
+
+  // Fallback : scan tous les Devis enrichis (couvre les devis sans lien Demande)
+  const tousDevis = await toutLire("Devis");
+  const enrichis = await enrichirAvecDemandes(tousDevis);
+  const trouve = enrichis.find((d) => d.fields["Référence"] === reference);
+  return trouve?.id ?? null;
+}
+
 /** Lit tous les devis, toutes utilisatrices et utilisateurs confondus (vue direction). */
 export async function lireTousLesDevis(): Promise<AirtableRecord[]> {
   const devis = await toutLire("Devis");

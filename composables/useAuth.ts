@@ -27,6 +27,7 @@ export const useAuth = () => {
       localStorage.setItem('neotravel_token', t)
       localStorage.setItem('neotravel_email', email)
       localStorage.setItem('neotravel_role', r)
+      localStorage.removeItem('neotravel_history')
     }
   }
 
@@ -38,6 +39,7 @@ export const useAuth = () => {
       localStorage.removeItem('neotravel_token')
       localStorage.removeItem('neotravel_email')
       localStorage.removeItem('neotravel_role')
+      localStorage.removeItem('neotravel_history')
     }
   }
 

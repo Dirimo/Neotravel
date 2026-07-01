@@ -1,0 +1,200 @@
+{
+  "name": "NeoTravel — Relance paiement (J+7)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-relance-001",
+      "name": "Toutes les heures",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/appceCt3bnungfohx/Devis",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "AND({Statut}='Accepté', {Statut_paiement}='En_attente', NOT({Relance_paiement_envoyee}), DATETIME_DIFF(TODAY(), {Date_acceptation}, 'days') >= 7)"
+            },
+            {
+              "name": "maxRecords",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-devis-relance-001",
+      "name": "Rechercher devis à relancer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1180, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "airtable-header-auth",
+          "name": "Airtable API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "records",
+        "options": {}
+      },
+      "id": "split-devis-relance-001",
+      "name": "Séparer devis à relancer",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.fields.Utilisateurs }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-email-connu-001",
+      "name": "Email connu ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: \"NeoTravel <onboarding@resend.dev>\", to: $('Séparer devis à relancer').item.json.fields.Utilisateurs, subject: \"Rappel — règlement devis \" + $('Séparer devis à relancer').item.json.fields['Numéro'], html: \"<p>Votre devis <strong>\" + $('Séparer devis à relancer').item.json.fields['Numéro'] + \"</strong> a été accepté il y a une semaine et n'a pas encore été réglé.</p><p>Merci de procéder au règlement de <strong>\" + ($('Séparer devis à relancer').item.json.fields['Prix_TTC'] ?? 'le montant convenu') + \" € TTC</strong> dans les meilleurs délais, ou de nous contacter si vous rencontrez une difficulté.</p>\" }) }}",
+        "options": {}
+      },
+      "id": "http-resend-relance-001",
+      "name": "Envoyer email relance (Resend)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1840, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "resend-header-auth",
+          "name": "Resend API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://api.airtable.com/v0/appceCt3bnungfohx/Devis/' + $('Séparer devis à relancer').item.json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { Relance_paiement_envoyee: true } }) }}",
+        "options": {}
+      },
+      "id": "http-marquer-relance-001",
+      "name": "Marquer relance envoyée",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2060, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "airtable-header-auth",
+          "name": "Airtable API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/appceCt3bnungfohx/Relances",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { Devis: [ { id: $('Séparer devis à relancer').item.json.id } ], Date_relance: $today.toFormat('yyyy-LL-dd'), Canal: 'Email', Statut: 'Envoyée' } }) }}",
+        "options": {}
+      },
+      "id": "http-creer-relance-001",
+      "name": "Créer ligne Relances",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2280, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "airtable-header-auth",
+          "name": "Airtable API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Toutes les heures": {
+      "main": [
+        [{ "node": "Rechercher devis à relancer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Rechercher devis à relancer": {
+      "main": [
+        [{ "node": "Séparer devis à relancer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Séparer devis à relancer": {
+      "main": [
+        [{ "node": "Email connu ?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email connu ?": {
+      "main": [
+        [{ "node": "Envoyer email relance (Resend)", "type": "main", "index": 0 }],
+        [{ "node": "Marquer relance envoyée", "type": "main", "index": 0 }]
+      ]
+    },
+    "Envoyer email relance (Resend)": {
+      "main": [
+        [{ "node": "Marquer relance envoyée", "type": "main", "index": 0 }]
+      ]
+    },
+    "Marquer relance envoyée": {
+      "main": [
+        [{ "node": "Créer ligne Relances", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
